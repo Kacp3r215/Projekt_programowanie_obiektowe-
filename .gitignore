@@ -1,5 +1,11 @@
-# Build output
+# Ignoruj wszystkie foldery bin/
 [Bb]in/
+
+# ALE nie ignoruj folderu bin w Robot_SCARA/External/Assimp/
+!Robot_SCARA/External/Assimp/bin/
+!Robot_SCARA/External/Assimp/bin/**
+
+# Build output
 [Oo]bj/
 
 # Visual Studio temp files
