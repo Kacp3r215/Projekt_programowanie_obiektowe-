@@ -1,0 +1,52 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Bb]in/
+[Oo]bj/
+*.exe
+*.dll
+*.pdb
+*.cache
+*.ilk
+*.log
+*.tlog
+*.ipch
+*.aps
+*.ncb
+*.sdf
+*.opensdf
+
+
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.old
+
+# OS pliki
+.DS_Store
+Thumbs.db
+
+# Model 3D / zasoby tymczasowe (opcjonalnie)
+*.fbx
+*.blend1
+*.3ds
+*.obj~
+
+# Git LFS (jeśli nie używasz, nie śledź dużych plików binarnych)
+*.iso
+*.zip
+*.rar
+*.7z
+
+# Z IDE
+.idea/
+*.iml
+*.ipr
+*.iws
