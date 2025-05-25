@@ -1,52 +1,27 @@
-# Visual Studio
+# Build output
+[Bb]in/
+[Oo]bj/
+
+# Visual Studio temp files
 .vs/
 *.user
 *.suo
-*.userosscache
-*.sln.docstates
-
-# Build results
-[Bb]in/
-[Oo]bj/
-*.exe
-*.dll
-*.pdb
-*.cache
-*.ilk
-*.log
-*.tlog
 *.ipch
-*.aps
-*.ncb
-*.sdf
-*.opensdf
 
+# Log files
+*.log
 
-
-# Temporary files
+# Ignoruj pliki tymczasowe
 *.tmp
 *.temp
-*.bak
-*.old
 
-# OS pliki
-.DS_Store
-Thumbs.db
+# Nie ignoruj DLL (ważne biblioteki)
+# Usuń lub skomentuj linijkę: *.dll
 
-# Model 3D / zasoby tymczasowe (opcjonalnie)
-*.fbx
-*.blend1
-*.3ds
-*.obj~
+# Jeśli trzymasz biblioteki w folderze libs/ lub external_libs/, dodaj wyjątek, żeby te pliki były śledzone
+!libs/**/*.dll
+!external_libs/**/*.dll
 
-# Git LFS (jeśli nie używasz, nie śledź dużych plików binarnych)
-*.iso
-*.zip
-*.rar
-*.7z
-
-# Z IDE
-.idea/
-*.iml
-*.ipr
-*.iws
+# Inne zasady ignorowania, które nie wyłączają bibliotek:
+*.exe
+*.pdb
