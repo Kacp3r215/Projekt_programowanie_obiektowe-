@@ -3,6 +3,15 @@
 #include <iostream>
 #include <glm.hpp>
 
+/* STEROWANIE ROBOTEM
+* M - przełacza tryb sterowania
+ * strzałki - obrót robota
+ * W,A,S,D - poruszanie kamerą
+ * lewy przycisk myszy - zmiana kierunku kamery
+ * prawy przycisk myszy - reset kamery
+ * scroll - zoom kamery
+ * ESC - zamknięcie okna
+ */
 
 
 	
@@ -11,7 +20,13 @@ using namespace std;
 //definicja kontruktora 
 Aplication::Aplication(int width, int height, const string& title) {
 	initGLFW();
-	CreateWindow(width, height, title);
+
+	GLFWmonitor* primary = glfwGetPrimaryMonitor();
+	const GLFWvidmode* mode = glfwGetVideoMode(primary);
+	int screenWidth = mode->width;
+	int screenHeight = mode->height;
+
+	CreateWindow(screenWidth, screenHeight, title);
 	gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
 	glfwSetTime(0.0);
@@ -58,8 +73,9 @@ void Aplication::CreateWindow(int width, int height, const string& title) {
 	glfwMakeContextCurrent(window);
 	glfwSetWindowUserPointer(window, this);
 	glfwSetScrollCallback(window, scroll_callback);
+	glfwSetCursorPosCallback(window, mouse_callback);
 }
-
+float cameraSpeed = 0.005f;
 
 //definicja obslugi scrolla
 
@@ -68,20 +84,55 @@ void Aplication::scroll_callback(GLFWwindow* window, double xoffset, double yoff
 	if (!app) return;
 	if (yoffset > 0) {
 		app->cameraPos /= 1.1f;
+		cameraSpeed *= (9.0/10.0);
 	}
 	else if (yoffset < 0) {
 		app->cameraPos *= 1.1f;
+		cameraSpeed *= (10.0/9.0);
 	}
+}
+
+double lastX = 0, lastY = 400;
+double offsetX = 0.0f, offsetY = 0.0f;
+bool firstMouse = true;
+
+
+
+void Aplication::mouse_callback(GLFWwindow* window, double xpos, double ypos) {
+	Aplication* app = static_cast<Aplication*>(glfwGetWindowUserPointer(window));
+
+	if (firstMouse) {
+		lastX = xpos;
+		lastY = ypos;
+		firstMouse = false;
+	}
+
+	offsetX = xpos - lastX;
+	offsetY = lastY - ypos; 
+	lastX = xpos;
+	lastY = ypos;
+
+	//cout << offsetX << " " << offsetY << endl;
+
+	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
+		if (offsetX < 0) app->cameraFront.x += offsetX * 0.01;
+		if (offsetX > 0) app->cameraFront.x += offsetX * 0.01;
+		if (offsetY < 0) app->cameraFront.y += offsetY * 0.01;
+		if (offsetY >0) app->cameraFront.y += offsetY * 0.01;
+	}
+
+
+
+
 }
 
 
 void Aplication::processInput() {
-	float cameraSpeed = 0.005f;
+
 
 
 	//sterowanie kamerą W,A,S,D
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-
 		cameraPos.z += cameraSpeed;
 
 		cameraPos.x += cameraSpeed;
@@ -106,11 +157,52 @@ void Aplication::processInput() {
 		cameraPos.z += cameraSpeed;
 		cameraPos.x -= cameraSpeed;
 	}
+	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
+
+		cameraPos.y -= cameraSpeed;
+		
+	}
+	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
+
+		cameraPos.y += cameraSpeed;
+	
+	}
+
+
+	
+	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
+		cameraPos= glm::vec3(3.0f, 2.0f, 3.0f);
+		cameraFront = glm::vec3(3.0f, 2.0f, 3.0f);
+		cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+		cameraSpeed = 0.005f;
+	
+	}
+/*	
+	if (cameraPos.x < 1.5 && cameraPos.z>4.3) {
+		cameraPos.x = 1.5;
+		cameraPos.z = 4.3;
+	}
+
+	if (cameraPos.x > 4.5 && cameraPos.z<1.3) {
+		cameraPos.x = 4.5;
+		cameraPos.z = 1.3;
+	}
+
+	if (cameraPos.x < 1.3 && cameraPos.z<1.4) {
+		cameraPos.x = 1.3;
+		cameraPos.z = 1.4;
+	}
+*/ ///tutaj bedzie ograniczenie na poruszanie po planszy
+
 	
 
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 		glfwSetWindowShouldClose(window, true);
 	}
+
+	//klikniecie prawego przycisku myszki robot powraca na ekran
+
+
 
 
 	static bool mKeyPressed = false;
@@ -156,13 +248,13 @@ void Aplication::run() {
 
 		glm::mat4 view = glm::lookAt(
 			cameraPos,
-			cameraPos-cameraFront,
+			cameraPos-cameraFront, //tutaj mozna kierunek chodzenia kamery wziac ten wektor
 			cameraUp
 		);
 		
 		//glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraPos + cameraUp);
 		//shader->setMat4("view", view);
-		
+		//cout << cameraPos.x << " " << cameraPos.y << " " << cameraPos.z << endl;
 
 
 		glm::mat4 modelMat = glm::rotate(glm::mat4(1.0f), glm::radians(rotationY), glm::vec3(0, 1, 0));
