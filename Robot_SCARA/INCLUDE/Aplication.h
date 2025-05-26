@@ -32,10 +32,12 @@ glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f, 0.0f);
 	bool controlMode = false;
 	float rotationY = 0.0f;
 
+
 	void initGLFW();
 	void CreateWindow(int width, int height, const string& title);
 	void processInput();
 	static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+	static void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 	
 
 };
