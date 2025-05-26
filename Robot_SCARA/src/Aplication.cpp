@@ -26,7 +26,7 @@ Aplication::Aplication(int width, int height, const string& title) {
 		cout << "Blad: model nie awiera zadmych meshow" << endl;
 	}
 	else {
-		cout << "Model za³¹dowany pomyœlnie, liczba meshow: " << model->meshes.size() << endl;
+		cout << "Model zaÂ³Â¹dowany pomyÅ“lnie, liczba meshow: " << model->meshes.size() << endl;
 	}
 	
 	
@@ -39,6 +39,8 @@ Aplication::~Aplication() {
 	glfwDestroyWindow(window);
 	glfwTerminate();
 }
+
+
 
 void Aplication::initGLFW() {
 	if (!glfwInit()) {
@@ -54,9 +56,58 @@ void Aplication::CreateWindow(int width, int height, const string& title) {
 
 	}
 	glfwMakeContextCurrent(window);
+	glfwSetWindowUserPointer(window, this);
+	glfwSetScrollCallback(window, scroll_callback);
 }
 
+
+//definicja obslugi scrolla
+
+void Aplication::scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+	Aplication* app = static_cast<Aplication*>(glfwGetWindowUserPointer(window));
+	if (!app) return;
+	if (yoffset > 0) {
+		app->cameraPos /= 1.1f;
+	}
+	else if (yoffset < 0) {
+		app->cameraPos *= 1.1f;
+	}
+}
+
+
 void Aplication::processInput() {
+	float cameraSpeed = 0.005f;
+
+
+	//sterowanie kamerÄ… W,A,S,D
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+
+		cameraPos.z += cameraSpeed;
+
+		cameraPos.x += cameraSpeed;
+
+	}
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+
+
+		cameraPos.z -= cameraSpeed;
+		cameraPos.x -= cameraSpeed;
+
+	}
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+
+
+		cameraPos.x += cameraSpeed;
+		cameraPos.z -= cameraSpeed;
+
+	}
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+
+		cameraPos.z += cameraSpeed;
+		cameraPos.x -= cameraSpeed;
+	}
+	
+
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 		glfwSetWindowShouldClose(window, true);
 	}
@@ -97,18 +148,20 @@ void Aplication::run() {
 
 		glfwPollEvents();
 
-		//kolor t³a
+		//kolor tÂ³a
 		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		shader->use();
 
 		glm::mat4 view = glm::lookAt(
-			glm::vec3(3.0f, 2.0f, 3.0f),
-			glm::vec3(0.0f, 0.0f, 0.0f),
-			glm::vec3(0.0f, 1.0f, 0.0f)
+			cameraPos,
+			cameraPos-cameraFront,
+			cameraUp
 		);
 		
+		//glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraPos + cameraUp);
+		//shader->setMat4("view", view);
 		
 
 
