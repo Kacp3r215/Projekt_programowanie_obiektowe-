@@ -17,7 +17,7 @@ class Aplication {
 public: 
 	Aplication(int width=800, int height=600, const string& title="SYMULACJA SCARA");
 	~Aplication(); // dekonstruktor
-	void run(); // g³ówna pêtla aplikacji 
+	void run(); // gÂ³Ã³wna pÃªtla aplikacji 
 	
 
 private: 
@@ -25,6 +25,9 @@ private:
 	unique_ptr<Model> model;
 	unique_ptr<Shader> shader;
 	glm::mat4 projection;
+glm::vec3 cameraPos   = glm::vec3(3.0f, 2.0f, 3.0f);
+glm::vec3 cameraFront = glm::vec3(3.0f, 2.0f,3.0f);
+glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f, 0.0f);
 
 	bool controlMode = false;
 	float rotationY = 0.0f;
@@ -32,6 +35,7 @@ private:
 	void initGLFW();
 	void CreateWindow(int width, int height, const string& title);
 	void processInput();
+	static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 	
 
 };
