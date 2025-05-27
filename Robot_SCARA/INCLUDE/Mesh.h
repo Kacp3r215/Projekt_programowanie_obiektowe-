@@ -20,6 +20,7 @@ public:
 	vector<unsigned int> indices;
 	unsigned int VAO;
 
+	Mesh() = default; 
 	Mesh(const string& name, vector<Vertex> vertices, vector<unsigned int> indices);
 	void Draw() const;
 

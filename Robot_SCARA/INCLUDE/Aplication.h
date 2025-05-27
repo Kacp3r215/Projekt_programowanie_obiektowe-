@@ -25,13 +25,17 @@ private:
 	unique_ptr<Model> model;
 	unique_ptr<Shader> shader;
 	glm::mat4 projection;
-glm::vec3 cameraPos   = glm::vec3(3.0f, 2.0f, 3.0f);
-glm::vec3 cameraFront = glm::vec3(3.0f, 2.0f,3.0f);
-glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f, 0.0f);
+	glm::vec3 cameraPos   = glm::vec3(3.0f, 2.0f, 3.0f);
+	glm::vec3 cameraFront = glm::vec3(3.0f, 2.0f,3.0f);
+	glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f, 0.0f);
 
 	bool controlMode = false;
 	float rotationY = 0.0f;
 
+	float arm1Angle = 0.0f;
+	float arm2Angle = 0.0f;
+	float arm3Angle = 0.0f;
+	int activeArm = 0;
 
 	void initGLFW();
 	void CreateWindow(int width, int height, const string& title);

@@ -9,9 +9,18 @@ Model::Model(const string& path) {
 	loadModel(path);
 }
 
+Mesh* Model::getMesh(const string& name) {
+	auto it = meshes.find(name);
+	if (it != meshes.end()) {
+		return &it->second;
+	}
+	return nullptr;
+}
+
+
 void Model::loadModel(const string& path) {
 	Assimp::Importer importer;
-	const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+	const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
 
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
 		cout << "Assimp error: " << importer.GetErrorString() << endl;
@@ -25,7 +34,8 @@ void Model::processNode(aiNode* node, const aiScene* scene) {
 
 	for (unsigned int i = 0; i < node->mNumMeshes; i++) {
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-		meshes.push_back(processMesh(mesh, scene));
+		Mesh processedMesh = processMesh(mesh, scene);
+		meshes[processedMesh.name] = processedMesh;
 	}
 
 	for (unsigned int i = 0; i < node->mNumChildren; i++) {
@@ -66,10 +76,11 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* /*scene*/) {
 	}
 
 	string name = mesh->mName.C_Str();
+	std::cout << "Loaded mesh: " << name << std::endl; // Debugowanie nazw
 	return Mesh(name, vertices, indices);
 }
 
 void Model::Draw() const {
-	for (const auto& mesh : meshes)
-		mesh.Draw();
+	for (const auto& pair : meshes)
+		pair.second.Draw();
 }

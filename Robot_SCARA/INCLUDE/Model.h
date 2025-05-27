@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <string>
+#include <map>
 #include <assimp/scene.h>
 #include "Mesh.h"
 
@@ -9,10 +10,11 @@ using namespace std;
 
 class Model {
 public:
-	vector<Mesh> meshes;
+	map<string, Mesh> meshes;
 
 	Model(const string& path);
 	void Draw() const;
+	Mesh* getMesh(const string& name);
 
 private:
 	void loadModel(const string& path);
