@@ -23,19 +23,24 @@ public:
 private: 
 	GLFWwindow* window; 
 	unique_ptr<Model> model;
+	unique_ptr<Model> model2;
+	unique_ptr<Model> model3;
+	//unique_ptr<Model> model4;
+
 	unique_ptr<Shader> shader;
 	glm::mat4 projection;
-	glm::vec3 cameraPos   = glm::vec3(3.0f, 2.0f, 3.0f);
-	glm::vec3 cameraFront = glm::vec3(3.0f, 2.0f,3.0f);
-	glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f, 0.0f);
+glm::vec3 cameraPos   = glm::vec3(3.0f, 2.0f, 3.0f);
+glm::vec3 cameraFront = glm::vec3(3.0f, 2.0f,3.0f);
+glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f, 0.0f);
 
 	bool controlMode = false;
-	float rotationY = 0.0f;
+	bool mode1 = true;
+	bool mode2 = false;
+	bool mode3 = false;
 
-	float arm1Angle = 0.0f;
-	float arm2Angle = 0.0f;
-	float arm3Angle = 0.0f;
-	int activeArm = 0;
+	float rotationY = 0.0f;
+	float rotationY1 = 0.0f;
+
 
 	void initGLFW();
 	void CreateWindow(int width, int height, const string& title);
