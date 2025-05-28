@@ -37,6 +37,8 @@ Aplication::Aplication(int width, int height, const string& title) {
 
 
 	model = make_unique<Model>("..//Robot_SCARA//assets//model_SCAR.obj");
+	model2 = make_unique<Model>("..//Robot_SCARA//assets//model_SCAR2.obj");
+	model3 = make_unique<Model>("..//Robot_SCARA//assets//model_SCAR2.obj");
 	if (model->meshes.empty()) {
 		cout << "Blad: model nie awiera zadmych meshow" << endl;
 	}
@@ -208,7 +210,6 @@ void Aplication::processInput() {
 	static bool mKeyPressed = false;
 	if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS && !mKeyPressed) {
 		controlMode = !controlMode;
-		activeArm = 0;
 		mKeyPressed = true;
 	}
 	else if (glfwGetKey(window, GLFW_KEY_M) == GLFW_RELEASE) {
@@ -221,23 +222,22 @@ void Aplication::processInput() {
 		float deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
-		if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) activeArm = 1;
-		if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) activeArm = 2;
-		if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS) activeArm = 3;
-
 		float rotationSpeed = 45.0f * deltaTime;
 
-		if (activeArm > 0) {
-			if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
-				if (activeArm == 1) arm1Angle -= rotationSpeed;
-				else if (activeArm == 2) arm2Angle -= rotationSpeed;
-				else if (activeArm == 3) arm3Angle -= rotationSpeed;
-			}
-			if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
-				if (activeArm == 1) arm1Angle += rotationSpeed;
-				else if (activeArm == 2) arm2Angle += rotationSpeed;
-				else if (activeArm == 3) arm3Angle += rotationSpeed;
-			}
+		if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+			rotationY += rotationSpeed;
+		}
+		if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+			rotationY -= rotationSpeed;
+		}
+
+		
+		
+		if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+			rotationY1 += rotationSpeed;
+		}
+		if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+			rotationY1 -= rotationSpeed;
 		}
 	}
 
@@ -262,59 +262,71 @@ void Aplication::run() {
 			cameraPos-cameraFront, //tutaj mozna kierunek chodzenia kamery wziac ten wektor
 			cameraUp
 		);
-		glm::mat4 projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
-
-		Mesh* podstawa = model->getMesh("Podstawa");
-		Mesh* ramie1 = model->getMesh("Ramie1");
-		Mesh* ramie2 = model->getMesh("Ramie2");
-		Mesh* ramie3 = model->getMesh("Ramie3");
-
-		glm::mat4 modelMat = glm::mat4(1.0f);
-
-		if (podstawa) {
-			shader->setMat4("mvp", projection * view * modelMat);
-			podstawa->Draw();
-		}
-
-		if (ramie1) {
-			glm::mat4 arm1Mat = modelMat;
-			arm1Mat = glm::translate(arm1Mat, glm::vec3(0.0f, 0.0f, 0.0f)); // Pozycja względem podstawy
-			arm1Mat = glm::rotate(arm1Mat, glm::radians(arm1Angle), glm::vec3(0.0f, 1.0f, 0.0f)); // Obrót wokół osi Z
-			shader->setMat4("mvp", projection * view * arm1Mat);
-			ramie1->Draw();
-
-			// Ramie2 jako dziecko Ramie1
-			if (ramie2) {
-				glm::mat4 arm2Mat = arm1Mat;
-				arm2Mat = glm::translate(arm2Mat, glm::vec3(0.0f, 0.0f, 0.0f)); // Pozycja względem Ramie1
-				arm2Mat = glm::rotate(arm2Mat, glm::radians(arm2Angle), glm::vec3(0.0f, 1.0f, 0.0f));
-				shader->setMat4("mvp", projection * view * arm2Mat);
-				ramie2->Draw();
-
-				// Ramie3 jako dziecko Ramie2
-				if (ramie3) {
-					glm::mat4 arm3Mat = arm2Mat;
-					arm3Mat = glm::translate(arm3Mat, glm::vec3(0.0f, 0.0f, 0.0f)); // Pozycja względem Ramie2
-					arm3Mat = glm::rotate(arm3Mat, glm::radians(arm3Angle), glm::vec3(0.0f, 1.0f, 0.0f));
-					shader->setMat4("mvp", projection * view * arm3Mat);
-					ramie3->Draw();
-				}
-			}
-		}
-
 		
 		//glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraPos + cameraUp);
-		//shader->setMat4("view", view);
+		shader->setMat4("view", view);
 		//cout << cameraPos.x << " " << cameraPos.y << " " << cameraPos.z << endl;
 
 
-		//glm::mat4 modelMat = glm::rotate(glm::mat4(1.0f), glm::radians(rotationY), glm::vec3(0, 1, 0));
-		//modelMat = glm::scale(modelMat, glm::vec3(0.1f));//skalowanie modelu 
-		
-		//glm::mat4 mvp = projection * view * modelMat;
-		//shader->setMat4("mvp", mvp);
+		// --- Rysowanie pierwszego modelu (obracanego) ---
+		glm::vec3 pivot = glm::vec3(-1.5f, 0.25f, 0.0f);
+		glm::mat4 modelMat1 = glm::mat4(1.0f); // brak rotacji
+		//modelMat1 = glm::translate(modelMat1, pivot); // przesunięcie do punktu obrotu
+		//modelMat1 = glm::rotate(modelMat1, glm::radians(rotationY), glm::vec3(0, 1, 0)); // obrót wokół osi Y
+		//modelMat1 = glm::translate(modelMat1, -pivot); // przesunięcie w górę
+
+		//modelMat1 = glm::rotate(glm::mat4(1.0f), glm::radians(rotationY), glm::vec3(0, 1, 0));
+		modelMat1 = glm::scale(modelMat1, glm::vec3(0.1f));
+		glm::mat4 mvp1 = projection * view * modelMat1;
+		shader->setMat4("mvp", mvp1);
+		model->Draw();
+
+
+
+
+		model->Draw();
+
+
+		// --- Rysowanie drugiego modelu (nieruchomego) ---
+		//glm::mat4 modelMat2 = glm::mat4(1.0f); // brak rotacji
+		 //punkt obrotu
+		glm::mat4 modelMat2 = glm::mat4(1.0f);
+		//glm::mat4 modelMat2 = glm::rotate(glm::mat4(1.0f), glm::radians(rotationY1), glm::vec3(0, 1, 0));
+		modelMat2 = glm::translate(modelMat2, pivot); //przesunięcie do punktu obrotu
+		modelMat2 = glm::rotate(modelMat2, glm::radians(rotationY1), glm::vec3(0, 1, 0)); //obrót wokół osi Y
+		modelMat2 = glm::translate(modelMat2, -pivot); //przesunięcie w górę
+		modelMat2 = glm::translate(modelMat2, glm::vec3(-3.0f, 0.5f, 0.0f)); //przesuniecie do koncowki ramienia
+	
+		//modelMat2 = glm::scale(modelMat2, glm::vec3(1.0f));
+
+		glm::mat4 mvp2 = projection * view * modelMat1 * modelMat2;
+		shader->setMat4("mvp", mvp2);
+		model2->Draw();
+
+
 
 		
+		glm::mat4 modelMat3 = glm::mat4(1.0f);
+		//glm::mat4 modelMat2 = glm::rotate(glm::mat4(1.0f), glm::radians(rotationY1), glm::vec3(0, 1, 0));
+		modelMat3 = glm::translate(modelMat3, pivot); //przesunięcie do punktu obrotu
+		modelMat3 = glm::rotate(modelMat3, glm::radians(rotationY), glm::vec3(0, 1, 0)); //obrót wokół osi Y
+		modelMat3 = glm::translate(modelMat3, -pivot); //przesunięcie w górę
+
+
+		modelMat3 = glm::translate(modelMat3, glm::vec3(-3.1f, 0.7f, 0.0f)); //przesuniecie do koncowki ramienia
+
+		//modelMat3 = glm::scale(modelMat3, glm::vec3(0.3f));
+
+		glm::mat4 mvp3 = projection * view * modelMat1* modelMat2 * modelMat3;
+		shader->setMat4("mvp", mvp3);
+		model3->Draw();
+
+
+
+
+
+
+
 
 
 		glfwSwapBuffers(window);
