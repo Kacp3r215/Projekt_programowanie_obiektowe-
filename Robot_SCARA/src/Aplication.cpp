@@ -39,6 +39,9 @@ Aplication::Aplication(int width, int height, const string& title) {
 	model = make_unique<Model>("..//Robot_SCARA//assets//model_SCAR.obj");
 	model2 = make_unique<Model>("..//Robot_SCARA//assets//model_SCAR2.obj");
 	model3 = make_unique<Model>("..//Robot_SCARA//assets//model_SCAR2.obj");
+	model4 = make_unique<Model>("..//Robot_SCARA//assets//model_SCAR3.obj");
+
+
 	if (model->meshes.empty()) {
 		cout << "Blad: model nie awiera zadmych meshow" << endl;
 	}
@@ -48,6 +51,7 @@ Aplication::Aplication(int width, int height, const string& title) {
 	
 	
 	shader = make_unique<Shader>("..//Robot_SCARA//assets//vertex.glsl", "..//Robot_SCARA//assets//fragment.glsl");
+	shader1 = make_unique<Shader>("..//Robot_SCARA//assets//vertex.glsl", "..//Robot_SCARA//assets//fragment2.glsl");
 
 }
 
@@ -77,7 +81,8 @@ void Aplication::CreateWindow(int width, int height, const string& title) {
 	glfwSetScrollCallback(window, scroll_callback);
 	glfwSetCursorPosCallback(window, mouse_callback);
 }
-float cameraSpeed = 0.005f;
+float cameraSpeed = 0.01f;
+
 
 //definicja obslugi scrolla
 
@@ -223,21 +228,47 @@ void Aplication::processInput() {
 		lastFrame = currentFrame;
 
 		float rotationSpeed = 45.0f * deltaTime;
+		float rotationSpeed1 = 5.0f * deltaTime;
 
+
+		if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
+			mode1 = true;
+			mode2 = false;
+			mode3 = false;
+		}
+		if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) {
+			mode1 = false;
+			mode2 = true;
+			mode3 = false;
+		}
+		if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS) {
+			mode1 = false;
+			mode2 = false;
+			mode3 = true;
+		}
+			
+		
+		
 		if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
-			rotationY += rotationSpeed;
+			if (mode1)rotationY += rotationSpeed;
+			if (mode2) rotationY1 += rotationSpeed;
+			if (mode3) {
+
+				rotationZ += rotationSpeed1;
+				if (rotationZ > 0)rotationZ = 0;
+
+			}
+			
 		}
 		if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
-			rotationY -= rotationSpeed;
-		}
+			if (mode1)rotationY -= rotationSpeed;
+			if (mode2) rotationY1 -= rotationSpeed;
+			if (mode3) {
+			rotationZ -= rotationSpeed1;
 
-		
-		
-		if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
-			rotationY1 += rotationSpeed;
-		}
-		if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-			rotationY1 -= rotationSpeed;
+			if (rotationZ < -3)rotationZ = -3;
+			}
+			
 		}
 	}
 
@@ -263,63 +294,92 @@ void Aplication::run() {
 			cameraUp
 		);
 		
-		//glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraPos + cameraUp);
+
 		shader->setMat4("view", view);
-		//cout << cameraPos.x << " " << cameraPos.y << " " << cameraPos.z << endl;
+		shader->setVec3("lightDir", lightDir);
+		shader->setVec3("lightColor", lightColor);
+
 
 
 		// --- Rysowanie pierwszego modelu (obracanego) ---
 		glm::vec3 pivot = glm::vec3(-1.5f, 0.25f, 0.0f);
-		glm::mat4 modelMat1 = glm::mat4(1.0f); // brak rotacji
-		//modelMat1 = glm::translate(modelMat1, pivot); // przesunięcie do punktu obrotu
-		//modelMat1 = glm::rotate(modelMat1, glm::radians(rotationY), glm::vec3(0, 1, 0)); // obrót wokół osi Y
-		//modelMat1 = glm::translate(modelMat1, -pivot); // przesunięcie w górę
-
-		//modelMat1 = glm::rotate(glm::mat4(1.0f), glm::radians(rotationY), glm::vec3(0, 1, 0));
+		glm::mat4 modelMat1 = glm::mat4(1.0f);
 		modelMat1 = glm::scale(modelMat1, glm::vec3(0.1f));
 		glm::mat4 mvp1 = projection * view * modelMat1;
 		shader->setMat4("mvp", mvp1);
+		shader->setMat4("model", modelMat1);
 		model->Draw();
 
 
 
-
-		model->Draw();
 
 
 		// --- Rysowanie drugiego modelu (nieruchomego) ---
-		//glm::mat4 modelMat2 = glm::mat4(1.0f); // brak rotacji
-		 //punkt obrotu
 		glm::mat4 modelMat2 = glm::mat4(1.0f);
-		//glm::mat4 modelMat2 = glm::rotate(glm::mat4(1.0f), glm::radians(rotationY1), glm::vec3(0, 1, 0));
 		modelMat2 = glm::translate(modelMat2, pivot); //przesunięcie do punktu obrotu
-		modelMat2 = glm::rotate(modelMat2, glm::radians(rotationY1), glm::vec3(0, 1, 0)); //obrót wokół osi Y
+		modelMat2 = glm::rotate(modelMat2, glm::radians(rotationY), glm::vec3(0, 1, 0)); //obrót wokół osi Y
 		modelMat2 = glm::translate(modelMat2, -pivot); //przesunięcie w górę
 		modelMat2 = glm::translate(modelMat2, glm::vec3(-3.0f, 0.5f, 0.0f)); //przesuniecie do koncowki ramienia
-	
-		//modelMat2 = glm::scale(modelMat2, glm::vec3(1.0f));
-
 		glm::mat4 mvp2 = projection * view * modelMat1 * modelMat2;
-		shader->setMat4("mvp", mvp2);
+
+		if (mode1) {
+			shader1->use();
+			shader1->setMat4("mvp", mvp2);
+			shader1->setMat4("model", modelMat2);
+
+		}
+		
+		else {
+			shader->use();
+			shader->setMat4("mvp", mvp2);
+			shader->setMat4("model", modelMat2);
+		}
+		
+		
 		model2->Draw();
 
-
-
-		
 		glm::mat4 modelMat3 = glm::mat4(1.0f);
 		//glm::mat4 modelMat2 = glm::rotate(glm::mat4(1.0f), glm::radians(rotationY1), glm::vec3(0, 1, 0));
 		modelMat3 = glm::translate(modelMat3, pivot); //przesunięcie do punktu obrotu
-		modelMat3 = glm::rotate(modelMat3, glm::radians(rotationY), glm::vec3(0, 1, 0)); //obrót wokół osi Y
+		modelMat3 = glm::rotate(modelMat3, glm::radians(rotationY1), glm::vec3(0, 1, 0)); //obrót wokół osi Y
 		modelMat3 = glm::translate(modelMat3, -pivot); //przesunięcie w górę
-
-
 		modelMat3 = glm::translate(modelMat3, glm::vec3(-3.1f, 0.7f, 0.0f)); //przesuniecie do koncowki ramienia
-
-		//modelMat3 = glm::scale(modelMat3, glm::vec3(0.3f));
-
 		glm::mat4 mvp3 = projection * view * modelMat1* modelMat2 * modelMat3;
-		shader->setMat4("mvp", mvp3);
+		if (mode2) {
+			shader1->use();
+		shader1->setMat4("mvp", mvp3);
+		shader1->setMat4("model", modelMat3);
+		}
+		else {
+			shader->use();
+			shader->setMat4("mvp", mvp3);
+			shader->setMat4("model", modelMat3);
+		}
 		model3->Draw();
+
+
+
+		glm::mat4 modelMat4 = glm::mat4(1.0f);
+		//modelMat4 = glm::scale(modelMat4, glm::vec3(0.03f));
+		modelMat4 = glm::translate(modelMat4, glm::vec3(-1.4f, 0.2f+rotationZ, 0.0f));
+		modelMat4 = glm::scale(modelMat4, glm::vec3(0.7f));
+		glm::mat4 mvp4 = projection * view * modelMat1 * modelMat2 * modelMat3 * modelMat4;
+		
+
+
+		if (mode3) {
+			shader1->use();
+			shader1->setMat4("mvp", mvp4);
+			shader1->setMat4("model", modelMat4);
+		}
+		else {
+			shader->use();
+			shader->setMat4("mvp", mvp4);
+			shader->setMat4("model", modelMat4);
+		}
+		model4->Draw();
+
+
 
 
 
