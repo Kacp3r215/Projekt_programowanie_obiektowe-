@@ -119,7 +119,6 @@ void Aplication::mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 	lastX = xpos;
 	lastY = ypos;
 
-	//cout << offsetX << " " << offsetY << endl;
 
 	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
 		if (offsetX < 0) app->cameraFront.x += offsetX * 0.01;
@@ -128,12 +127,7 @@ void Aplication::mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 		if (offsetY >0) app->cameraFront.y += offsetY * 0.01;
 	}
 
-
-
-
 }
-
-
 void Aplication::processInput() {
 
 
@@ -176,6 +170,7 @@ void Aplication::processInput() {
 	}
 
 
+	//reset na prawy przycisk
 	
 	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
 		cameraPos= glm::vec3(3.0f, 2.0f, 3.0f);
@@ -184,34 +179,13 @@ void Aplication::processInput() {
 		cameraSpeed = 0.005f;
 	
 	}
-/*	
-	if (cameraPos.x < 1.5 && cameraPos.z>4.3) {
-		cameraPos.x = 1.5;
-		cameraPos.z = 4.3;
-	}
 
-	if (cameraPos.x > 4.5 && cameraPos.z<1.3) {
-		cameraPos.x = 4.5;
-		cameraPos.z = 1.3;
-	}
-
-	if (cameraPos.x < 1.3 && cameraPos.z<1.4) {
-		cameraPos.x = 1.3;
-		cameraPos.z = 1.4;
-	}
-*/ ///tutaj bedzie ograniczenie na poruszanie po planszy
-
-	
 
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 		glfwSetWindowShouldClose(window, true);
 	}
 
-	//klikniecie prawego przycisku myszki robot powraca na ekran
-
-
-
-
+	
 	static bool mKeyPressed = false;
 	if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS && !mKeyPressed) {
 		controlMode = !controlMode;
@@ -252,22 +226,26 @@ void Aplication::processInput() {
 		if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
 			if (mode1)rotationY += rotationSpeed;
 			if (mode2) rotationY1 += rotationSpeed;
+
+
+			if (mode3) {
+				rotationZ -= rotationSpeed1;
+
+				if (rotationZ < -3)rotationZ = -3;
+			}
+		}
+		if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+			if (mode1)rotationY -= rotationSpeed;
+			if (mode2) rotationY1 -= rotationSpeed;
+
 			if (mode3) {
 
 				rotationZ += rotationSpeed1;
 				if (rotationZ > 0)rotationZ = 0;
 
 			}
-			
-		}
-		if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
-			if (mode1)rotationY -= rotationSpeed;
-			if (mode2) rotationY1 -= rotationSpeed;
-			if (mode3) {
-			rotationZ -= rotationSpeed1;
 
-			if (rotationZ < -3)rotationZ = -3;
-			}
+
 			
 		}
 	}
@@ -290,22 +268,38 @@ void Aplication::run() {
 
 		glm::mat4 view = glm::lookAt(
 			cameraPos,
-			cameraPos-cameraFront, //tutaj mozna kierunek chodzenia kamery wziac ten wektor
+			cameraPos-cameraFront, 
 			cameraUp
 		);
-		
 
 		shader->setMat4("view", view);
 		shader->setVec3("lightDir", lightDir);
 		shader->setVec3("lightColor", lightColor);
 
 
+		shader1->use();
 
-		// --- Rysowanie pierwszego modelu (obracanego) ---
+		glm::mat4 view1 = glm::lookAt(
+			cameraPos,
+			cameraPos - cameraFront, 
+			cameraUp
+		);
+		
+
+
+
+		shader1->setMat4("view", view1);
+		shader1->setVec3("lightDir", lightDir);
+		shader1->setVec3("lightColor", lightColor);
+
+
+
+		// --- Rysowanie pierwszego modelu  ---
 		glm::vec3 pivot = glm::vec3(-1.5f, 0.25f, 0.0f);
 		glm::mat4 modelMat1 = glm::mat4(1.0f);
 		modelMat1 = glm::scale(modelMat1, glm::vec3(0.1f));
 		glm::mat4 mvp1 = projection * view * modelMat1;
+		shader->use();
 		shader->setMat4("mvp", mvp1);
 		shader->setMat4("model", modelMat1);
 		model->Draw();
@@ -314,7 +308,7 @@ void Aplication::run() {
 
 
 
-		// --- Rysowanie drugiego modelu (nieruchomego) ---
+		// --- Rysowanie drugiego modelu  ---
 		glm::mat4 modelMat2 = glm::mat4(1.0f);
 		modelMat2 = glm::translate(modelMat2, pivot); //przesunięcie do punktu obrotu
 		modelMat2 = glm::rotate(modelMat2, glm::radians(rotationY), glm::vec3(0, 1, 0)); //obrót wokół osi Y
@@ -338,8 +332,9 @@ void Aplication::run() {
 		
 		model2->Draw();
 
+		// --- Rysowanie trzeciego modelu  ---
+
 		glm::mat4 modelMat3 = glm::mat4(1.0f);
-		//glm::mat4 modelMat2 = glm::rotate(glm::mat4(1.0f), glm::radians(rotationY1), glm::vec3(0, 1, 0));
 		modelMat3 = glm::translate(modelMat3, pivot); //przesunięcie do punktu obrotu
 		modelMat3 = glm::rotate(modelMat3, glm::radians(rotationY1), glm::vec3(0, 1, 0)); //obrót wokół osi Y
 		modelMat3 = glm::translate(modelMat3, -pivot); //przesunięcie w górę
@@ -358,9 +353,8 @@ void Aplication::run() {
 		model3->Draw();
 
 
-
+		// --- Rysowanie czwartego modelu  ---
 		glm::mat4 modelMat4 = glm::mat4(1.0f);
-		//modelMat4 = glm::scale(modelMat4, glm::vec3(0.03f));
 		modelMat4 = glm::translate(modelMat4, glm::vec3(-1.4f, 0.2f+rotationZ, 0.0f));
 		modelMat4 = glm::scale(modelMat4, glm::vec3(0.7f));
 		glm::mat4 mvp4 = projection * view * modelMat1 * modelMat2 * modelMat3 * modelMat4;
@@ -378,17 +372,6 @@ void Aplication::run() {
 			shader->setMat4("model", modelMat4);
 		}
 		model4->Draw();
-
-
-
-
-
-
-
-
-
-
-
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
