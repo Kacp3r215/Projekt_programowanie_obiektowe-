@@ -40,3 +40,31 @@ void Mesh::Draw() const {
 	glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
 }
+
+Mesh Mesh::CreateGrid(const std::string& name, float size, int divisions) {
+	std::vector<Vertex> vertices;
+	std::vector<unsigned int> indices;
+
+	float step = size / divisions;
+	float halfSize = size * 0.5f;
+
+	// Linie równoleg³e do X (poziome)
+	for (int i = 0; i <= divisions; ++i) {
+		float z = -halfSize + i * step;
+		vertices.push_back({ glm::vec3(-halfSize, 0.0f, z), glm::vec3(0, 1, 0), glm::vec2(0) });
+		vertices.push_back({ glm::vec3(halfSize, 0.0f, z), glm::vec3(0, 1, 0), glm::vec2(1) });
+		indices.push_back(i * 2);
+		indices.push_back(i * 2 + 1);
+	}
+
+	// Linie równoleg³e do Z (pionowe)
+	for (int i = 0; i <= divisions; ++i) {
+		float x = -halfSize + i * step;
+		vertices.push_back({ glm::vec3(x, 0.0f, -halfSize), glm::vec3(0, 1, 0), glm::vec2(0) });
+		vertices.push_back({ glm::vec3(x, 0.0f, halfSize), glm::vec3(0, 1, 0), glm::vec2(1) });
+		indices.push_back((divisions + 1 + i) * 2);
+		indices.push_back((divisions + 1 + i) * 2 + 1);
+	}
+
+	return Mesh(name, vertices, indices);
+}

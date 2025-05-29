@@ -23,6 +23,7 @@ public:
 	Mesh() = default; 
 	Mesh(const string& name, vector<Vertex> vertices, vector<unsigned int> indices);
 	void Draw() const;
+	static Mesh CreateGrid(const string& name, float size, int divisions);
 
 private:
 	unsigned int VBO, EBO;

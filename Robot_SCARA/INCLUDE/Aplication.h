@@ -30,6 +30,8 @@
 		unique_ptr<Shader> shader;
 		unique_ptr<Shader> shader1;
 
+		unique_ptr<Mesh> groundGrid;
+
 		glm::mat4 projection;
 		glm::vec3 cameraPos   = glm::vec3(3.0f, 2.0f, 3.0f);
 		glm::vec3 cameraFront = glm::vec3(3.0f, 2.0f,3.0f);
