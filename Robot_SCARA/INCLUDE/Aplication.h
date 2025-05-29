@@ -22,10 +22,10 @@
 
 	private: 
 		GLFWwindow* window; 
-		unique_ptr<Model> model;
-		unique_ptr<Model> model2;
-		unique_ptr<Model> model3;
-		unique_ptr<Model> model4;
+		unique_ptr<Model> Base;
+		unique_ptr<Model> Arm1;
+		unique_ptr<Model> Arm2;
+		unique_ptr<Model> Arm3;
 
 		unique_ptr<Shader> shader;
 		unique_ptr<Shader> shader1;
@@ -53,6 +53,7 @@
 		void processInput();
 		static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 		static void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+		
 	
 
 	};
