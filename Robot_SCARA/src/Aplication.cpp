@@ -14,9 +14,10 @@
  */
 
 
-	
+
 using namespace std;
 
+glm::vec3 globalMin1, globalMax2, globalMin3, globalMax4;
 //definicja kontruktora 
 Aplication::Aplication(int width, int height, const string& title) {
 	initGLFW();
@@ -38,10 +39,41 @@ Aplication::Aplication(int width, int height, const string& title) {
 
 	Base = make_unique<Model>("..//Robot_SCARA//assets//Podstawa.obj");
 	Arm1 = make_unique<Model>("..//Robot_SCARA//assets//Ramie1.obj");
-	Arm2= make_unique<Model>("..//Robot_SCARA//assets//Ramie2.obj");
+	Arm2 = make_unique<Model>("..//Robot_SCARA//assets//Ramie2.obj");
 	Arm3 = make_unique<Model>("..//Robot_SCARA//assets//Ramie3.obj");
+	prymityw = make_unique<Model>("..//Robot_SCARA//assets//prymityw.obj");
 
-	
+
+	//informacja gdzie lezy najmniejszy i najwiekszy wierzcholek
+	Model* model = Arm3.get(); 
+	glm::vec3 globalMin(FLT_MAX), globalMax(-FLT_MAX);
+
+	for (const Mesh& mesh : model->meshes) {
+		for (const Vertex& v : mesh.vertices) {
+			globalMin = glm::min(globalMin, v.position);
+			globalMax = glm::max(globalMax, v.position);
+		}
+	}
+	globalMin1 = globalMin;
+	globalMax2 = globalMax;
+
+	Model* model1 = prymityw.get();
+	glm::vec3 globalMinx(FLT_MAX), globalMaxx(-FLT_MAX);
+
+	for (const Mesh& mesh : model1->meshes) {
+		for (const Vertex& v : mesh.vertices) {
+			globalMinx = glm::min(globalMinx, v.position);
+			globalMaxx = glm::max(globalMaxx, v.position);
+		}
+	}
+	globalMin3 = globalMinx;
+	globalMax4 = globalMaxx;
+
+
+
+
+
+
 
 	if (Base->meshes.empty()) {
 		cout << "Blad: model nie awiera zadmych meshow" << endl;
@@ -49,8 +81,8 @@ Aplication::Aplication(int width, int height, const string& title) {
 	else {
 		cout << "Model za³¹dowany pomyœlnie, liczba meshow: " << Base->meshes.size() << endl;
 	}
-	
-	
+
+
 	shader = make_unique<Shader>("..//Robot_SCARA//assets//vertex.glsl", "..//Robot_SCARA//assets//fragment.glsl");
 	shader1 = make_unique<Shader>("..//Robot_SCARA//assets//vertex.glsl", "..//Robot_SCARA//assets//fragment2.glsl");
 
@@ -73,7 +105,7 @@ void Aplication::initGLFW() {
 }
 
 void Aplication::CreateWindow(int width, int height, const string& title) {
-	window = glfwCreateWindow(width, height, title.c_str(),NULL,NULL);
+	window = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
 	if (!window) {
 		cout << "Nie udalo sie stworzyc okienka" << endl;
 		glfwTerminate();
@@ -94,11 +126,11 @@ void Aplication::scroll_callback(GLFWwindow* window, double xoffset, double yoff
 	if (!app) return;
 	if (yoffset > 0) {
 		app->cameraPos /= 1.1f;
-		cameraSpeed *= (9.0/10.0);
+		cameraSpeed *= (9.0 / 10.0);
 	}
 	else if (yoffset < 0) {
 		app->cameraPos *= 1.1f;
-		cameraSpeed *= (10.0/9.0);
+		cameraSpeed *= (10.0 / 9.0);
 	}
 }
 
@@ -118,7 +150,7 @@ void Aplication::mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 	}
 
 	offsetX = xpos - lastX;
-	offsetY = lastY - ypos; 
+	offsetY = lastY - ypos;
 	lastX = xpos;
 	lastY = ypos;
 
@@ -127,7 +159,7 @@ void Aplication::mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 		if (offsetX < 0) app->cameraFront.x += offsetX * 0.01;
 		if (offsetX > 0) app->cameraFront.x += offsetX * 0.01;
 		if (offsetY < 0) app->cameraFront.y += offsetY * 0.01;
-		if (offsetY >0) app->cameraFront.y += offsetY * 0.01;
+		if (offsetY > 0) app->cameraFront.y += offsetY * 0.01;
 	}
 
 }
@@ -164,23 +196,23 @@ void Aplication::processInput() {
 	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
 
 		cameraPos.y -= cameraSpeed;
-		
+
 	}
 	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
 
 		cameraPos.y += cameraSpeed;
-	
+
 	}
 
 
 	//reset na prawy przycisk
-	
+
 	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
-		cameraPos= glm::vec3(3.0f, 2.0f, 3.0f);
+		cameraPos = glm::vec3(3.0f, 2.0f, 3.0f);
 		cameraFront = glm::vec3(3.0f, 2.0f, 3.0f);
 		cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 		cameraSpeed = 0.005f;
-	
+
 	}
 
 
@@ -188,7 +220,7 @@ void Aplication::processInput() {
 		glfwSetWindowShouldClose(window, true);
 	}
 
-	
+
 	static bool mKeyPressed = false;
 	if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS && !mKeyPressed) {
 		controlMode = !controlMode;
@@ -223,72 +255,60 @@ void Aplication::processInput() {
 			mode2 = false;
 			mode3 = true;
 		}
-			
-		
-		
+
+
+
 		if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
 
 			if (mode1) {
 				rotationY += rotationSpeed;
-				rotationY = glm::clamp(rotationY, -140.0f, 140.0f);
+				rotationY = glm::clamp(rotationY, -160.0f, 160.0f);
 			}
 			if (mode2) {
 				rotationY1 += rotationSpeed;
 				rotationY1 = glm::clamp(rotationY1, -140.0f, 140.0f);
 			}
 
-			//if (mode1)rotationY += rotationSpeed;
-			//if (mode2) rotationY1 += rotationSpeed;
 
 
 			if (mode3) {
-				rotationZ += rotationSpeed1;
 
-				rotationZ = glm::clamp(rotationZ, -2.5f, -0.2f);
-			}
-		}
-		//if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
-		//	if (mode1)rotationY -= rotationSpeed;
-		//	if (mode2) rotationY1 -= rotationSpeed;
-
-
-		//	if (mode3) {
-
-		//		rotationZ += rotationSpeed1;
-		//		rotationZ = glm::clamp(rotationZ, -2.5f, -0.5f);
-
-		//	}
-	
-			
-		//}
-		if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
-			if (mode1) {
-				rotationY -= rotationSpeed;
-				rotationY = glm::clamp(rotationY, -140.0f, 140.0f);
-			}
-			if (mode2){
-				rotationY1 -= rotationSpeed;
-				rotationY1 = glm::clamp(rotationY1, -140.0f, 140.0f);
-			}
-			if (mode3) {
 				rotationZ -= rotationSpeed1;
 
 				rotationZ = glm::clamp(rotationZ, -2.2f, -0.2f);
 			}
+		}
+
+		if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+			if (mode1) {
+				rotationY -= rotationSpeed;
+				rotationY = glm::clamp(rotationY, -160.0f, 160.0f);
+			}
+			if (mode2) {
+				rotationY1 -= rotationSpeed;
+				rotationY1 = glm::clamp(rotationY1, -140.0f, 140.0f);
+			}
+			if (mode3) {
+				rotationZ += rotationSpeed1;
+
+				rotationZ = glm::clamp(rotationZ, -2.5f, -0.2f);
+
+			}
 
 
 
 
-			
+
 		}
 	}
 
 }
 
-
+	bool prim = false;
 void Aplication::run() {
+
 	while (!glfwWindowShouldClose(window)) {
-		
+
 		processInput();
 
 		glfwPollEvents();
@@ -301,24 +321,16 @@ void Aplication::run() {
 
 		glm::mat4 view = glm::lookAt(
 			cameraPos,
-			cameraPos-cameraFront, 
+			cameraPos - cameraFront,
 			cameraUp
 		);
-
-		
-
-
 
 		shader->setMat4("view", view);
 		shader->setVec3("lightDir", lightDir);
 		shader->setVec3("lightColor", lightColor);
 
 
-
-		
-
-
-		// --- Rysowanie pierwszego modelu (obracanego) ---
+		// --- Rysowanie podlogi ---
 
 		shader1->use();
 
@@ -335,12 +347,9 @@ void Aplication::run() {
 
 		glm::mat4 view1 = glm::lookAt(
 			cameraPos,
-			cameraPos - cameraFront, 
+			cameraPos - cameraFront,
 			cameraUp
 		);
-		
-
-
 
 		shader1->setMat4("view", view1);
 		shader1->setVec3("lightDir", lightDir);
@@ -359,10 +368,6 @@ void Aplication::run() {
 		shader->setMat4("model", modelMat1);
 		Base->Draw();
 
-
-
-
-
 		// --- Rysowanie drugiego modelu  ---
 		glm::mat4 modelMat2 = glm::mat4(1.0f);
 		glm::vec3 pivot1 = glm::vec3(0.0f, 0.25f, 1.8f);
@@ -378,34 +383,28 @@ void Aplication::run() {
 			shader1->setMat4("model", modelMat2);
 
 		}
-		
+
 		else {
 			shader->use();
 			shader->setMat4("mvp", mvp2);
 			shader->setMat4("model", modelMat2);
 		}
-		
-		
 		Arm1->Draw();
 
+
+
 		// --- Rysowanie trzeciego modelu  ---
-
 		glm::mat4 modelMat3 = glm::mat4(1.0f);
-
 		glm::vec3 pivot2 = glm::vec3(0.0f, 0.25f, 2.6f);
-		//glm::mat4 modelMat2 = glm::rotate(glm::mat4(1.0f), glm::radians(rotationY1), glm::vec3(0, 1, 0));
 		modelMat3 = glm::translate(modelMat3, pivot2); //przesunięcie do punktu obrotu
-
-		//modelMat3 = glm::translate(modelMat3, pivot); //przesunięcie do punktu obrotu
-
 		modelMat3 = glm::rotate(modelMat3, glm::radians(rotationY1), glm::vec3(0, 1, 0)); //obrót wokół osi Y
 		modelMat3 = glm::translate(modelMat3, -pivot2); //przesunięcie w górę
 		modelMat3 = glm::translate(modelMat3, glm::vec3(0.0f, 0.5f, 6.7f)); //przesuniecie do koncowki ramienia
-		glm::mat4 mvp3 = projection * view * modelMat1* modelMat2 * modelMat3;
+		glm::mat4 mvp3 = projection * view * modelMat1 * modelMat2 * modelMat3;
 		if (mode2) {
 			shader1->use();
-		shader1->setMat4("mvp", mvp3);
-		shader1->setMat4("model", modelMat3);
+			shader1->setMat4("mvp", mvp3);
+			shader1->setMat4("model", modelMat3);
 		}
 		else {
 			shader->use();
@@ -415,18 +414,16 @@ void Aplication::run() {
 		Arm2->Draw();
 
 
+
+
+
+
+
 		// --- Rysowanie czwartego modelu  ---
 		glm::mat4 modelMat4 = glm::mat4(1.0f);
-
-		//modelMat4 = glm::scale(modelMat4, glm::vec3(0.03f));
-		modelMat4 = glm::translate(modelMat4, glm::vec3(0.0f, -0.2f+rotationZ, 0.0f));
-
-		//modelMat4 = glm::translate(modelMat4, glm::vec3(-1.4f, 0.2f+rotationZ, 0.0f));
-
+		modelMat4 = glm::translate(modelMat4, glm::vec3(0.0f, -0.2f + rotationZ, 0.0f));
 		modelMat4 = glm::scale(modelMat4, glm::vec3(0.7f));
 		glm::mat4 mvp4 = projection * view * modelMat1 * modelMat2 * modelMat3 * modelMat4;
-		
-
 
 		if (mode3) {
 			shader1->use();
@@ -438,14 +435,49 @@ void Aplication::run() {
 			shader->setMat4("mvp", mvp4);
 			shader->setMat4("model", modelMat4);
 		}
-
 		Arm3->Draw();
 
+		glm::mat4 modelMatrix = modelMat1 * modelMat2 * modelMat3 * modelMat4;
+		glm::vec3 minWorld = glm::vec3(modelMatrix * glm::vec4(globalMin1, 1.0f));
+		glm::vec3 maxWorld = glm::vec3(modelMatrix * glm::vec4(globalMax2, 1.0f));
 
 
+
+
+
+
+		// --- Rysowanie prymitywa ---
+
+		glm::mat4 modelMat5 = glm::mat4(1.0f);
+		//modelMat5 = glm::scale(modelMat5, glm::vec3(0.1f));
+		modelMat5 = glm::translate(modelMat5, glm::vec3(0.5f, 0.0f, 0.0f));
+
+		glm::mat4 mvp5;
+
+		if (prim == false) mvp5 = projection * view * modelMat5;
+		else mvp5 = projection * view * modelMat1 * modelMat2 * modelMat3 * modelMat4 * modelMat5;
+
+		shader->use();
+		shader->setMat4("mvp", mvp5 * (1.0f / 0.007f));
+		shader->setMat4("model", modelMat5);
+		prymityw->Draw();
+
+		glm::vec3 primMinWorld = glm::vec3(modelMat5 * glm::vec4(globalMin3, 1.0f));
+		glm::vec3 primMaxWorld = glm::vec3(modelMat5 * glm::vec4(globalMax4, 1.0f));
+
+
+
+
+		if (minWorld.x <= primMaxWorld.x && maxWorld.x >= primMinWorld.x &&
+			minWorld.y <= primMaxWorld.y && maxWorld.y >= primMinWorld.y &&
+			minWorld.z <= primMaxWorld.z && maxWorld.z >= primMinWorld.z) {
+			prim = true;
+		}
 		
+
+
+
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
 }
-
