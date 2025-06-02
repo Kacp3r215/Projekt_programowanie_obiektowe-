@@ -11,6 +11,9 @@
  * prawy przycisk myszy - reset kamery
  * scroll - zoom kamery
  * ESC - zamknięcie okna
+ * OBSŁUGA TRYBU UCZENIA
+ * KLIKNAC M NASTEPNIE L WYKONAC JAKIES RUCHY PRZY POMOCY 1 2 3 I STRZALEK 
+ * ZNOWU KLIKNAC L ZEBY ZAKONCZYC NAGRYWANIE, NACISNAC K ZEBY URUCHOMIC ODTWARZANIE 
  */
 
 
@@ -163,9 +166,45 @@ void Aplication::mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 	}
 
 }
+
+void Aplication::updatePlayback(float deltaTime) {
+	if (playbackMode == PlaybackMode::RECORDING) {
+		movementSequence.emplace_back(rotationY, rotationY1, rotationZ);
+	}
+	else if (playbackMode == PlaybackMode::PLAYBACK && !movementSequence.empty()) {
+		// Tymczasowo wyłącz controlMode podczas odtwarzania
+		bool wasControlMode = controlMode;
+		controlMode = false;
+
+		playbackTimer += deltaTime * playbackSpeed * 5.0f;
+
+		// Bez interpolacji - dokładne odtwarzanie
+		auto& frame = movementSequence[currentPlaybackIndex];
+		rotationY = std::get<0>(frame);
+		rotationY1 = std::get<1>(frame);
+		rotationZ = std::get<2>(frame);
+
+		playbackTimer += deltaTime;
+		if (playbackTimer >= (1.0f / 120.0f)) {  // 60 FPS
+			playbackTimer = 0.0f;
+			currentPlaybackIndex = (currentPlaybackIndex + 1) % movementSequence.size();
+
+			// Dodajemy debugowy output
+			std::cout << "Playing frame " << currentPlaybackIndex
+				<< ": Y=" << rotationY
+				<< ", Y1=" << rotationY1
+				<< ", Z=" << rotationZ << std::endl;
+		}
+
+		controlMode = wasControlMode;
+	}
+}
+
+
 void Aplication::processInput() {
 
-
+	static bool lKeyPressed = false;
+	static bool kKeyPressed = false;
 
 	//sterowanie kamerą W,A,S,D
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
@@ -230,7 +269,7 @@ void Aplication::processInput() {
 		mKeyPressed = false;
 	}
 
-	if (controlMode) {
+	if (controlMode && playbackMode != PlaybackMode :: PLAYBACK) {
 		static float lastFrame = 0.0f;
 		float currentFrame = glfwGetTime();
 		float deltaTime = currentFrame - lastFrame;
@@ -302,14 +341,62 @@ void Aplication::processInput() {
 		}
 	}
 
+	if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS && !lKeyPressed) {
+		if (playbackMode == PlaybackMode::NORMAL) {
+			playbackMode = PlaybackMode::RECORDING;
+			movementSequence.clear();
+			cout << "Ropoczęto nagrywanie sekwencji" << endl;
+		}
+		else if (playbackMode == PlaybackMode::RECORDING) {
+			playbackMode = PlaybackMode::NORMAL;
+			cout << "Zakonczono nagrywanie. Sekwencja ma: " << movementSequence.size() << endl;
+		}
+		lKeyPressed = true;
+	}
+	else if (glfwGetKey(window, GLFW_KEY_L) == GLFW_RELEASE) {
+		lKeyPressed = false;
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS && !kKeyPressed) {
+		if (!movementSequence.empty()) {
+			if (playbackMode == PlaybackMode::NORMAL) {
+				playbackMode = PlaybackMode::PLAYBACK;
+				currentPlaybackIndex = 0;
+				playbackTimer = 0.0f;
+				std::cout << "Rozpoczęto odtwarzanie sekwencji. Liczba klatek: "
+					<< movementSequence.size() << std::endl;
+			}
+			else if (playbackMode == PlaybackMode::PLAYBACK) {
+				playbackMode = PlaybackMode::NORMAL;
+				std::cout << "Zatrzymano odtwarzanie" << std::endl;
+			}
+			kKeyPressed = true;
+		}
+		else {
+			std::cout << "Brak sekwencji do odtworzenia!" << std::endl;
+		}
+	}
+
+
 }
 
 	bool prim = false;
 void Aplication::run() {
 
+	float lastFrame = 0.0f;
+
 	while (!glfwWindowShouldClose(window)) {
 
+		float currentFrame = glfwGetTime();
+		float deltaTime = currentFrame - lastFrame;
+		lastFrame = currentFrame;
+
+
 		processInput();
+
+		if (playbackMode != PlaybackMode::NORMAL) {
+			updatePlayback(deltaTime);
+		}
 
 		glfwPollEvents();
 

@@ -3,6 +3,8 @@
 
 #include <string>
 #include <memory>
+#include <vector>
+#include <tuple>
 #include "Model.h"
 #include "Shader.h"
 #include <glm.hpp>
@@ -10,6 +12,14 @@
 #include <GLFW/glfw3.h>
 
 using namespace std;
+
+
+//tryb uczenia
+enum class PlaybackMode {
+	NORMAL,
+	RECORDING,
+	PLAYBACK
+};
 
 
 //deklaracja klasy 
@@ -52,10 +62,20 @@ private:
 	glm::vec3 lightDir = glm::normalize(glm::vec3(-1.0f, -1.0f, -0.5f)); // kierunek padania światła
 	glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 0.95f); // kolor światła (lekko żółty)
 
+	// ZMIENNE TRYBU UCZENIA
+	PlaybackMode playbackMode = PlaybackMode::NORMAL;
+	vector <tuple<float, float, float>> movementSequence;
+	float playbackSpeed = 1.0f;
+	size_t currentPlaybackIndex = 0;
+	float playbackTimer = 2.0f;
+
+
+
 
 	void initGLFW();
 	void CreateWindow(int width, int height, const string& title);
 	void processInput();
+	void updatePlayback(float deltaTime);
 	static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 	static void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 
