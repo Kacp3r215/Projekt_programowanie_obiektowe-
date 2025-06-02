@@ -12,8 +12,8 @@
  * scroll - zoom kamery
  * ESC - zamknięcie okna
  * OBSŁUGA TRYBU UCZENIA
- * KLIKNAC M NASTEPNIE L WYKONAC JAKIES RUCHY PRZY POMOCY 1 2 3 I STRZALEK 
- * ZNOWU KLIKNAC L ZEBY ZAKONCZYC NAGRYWANIE, NACISNAC K ZEBY URUCHOMIC ODTWARZANIE 
+ * KLIKNAC M NASTEPNIE L WYKONAC JAKIES RUCHY PRZY POMOCY 1 2 3 I STRZALEK
+ * ZNOWU KLIKNAC L ZEBY ZAKONCZYC NAGRYWANIE, NACISNAC K ZEBY URUCHOMIC ODTWARZANIE
  */
 
 
@@ -48,7 +48,7 @@ Aplication::Aplication(int width, int height, const string& title) {
 
 
 	//informacja gdzie lezy najmniejszy i najwiekszy wierzcholek
-	Model* model = Arm3.get(); 
+	Model* model = Arm3.get();
 	glm::vec3 globalMin(FLT_MAX), globalMax(-FLT_MAX);
 
 	for (const Mesh& mesh : model->meshes) {
@@ -247,9 +247,9 @@ void Aplication::processInput() {
 	//reset na prawy przycisk
 
 	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
-		cameraPos = glm::vec3(3.0f, 2.0f, 3.0f);
-		cameraFront = glm::vec3(3.0f, 2.0f, 3.0f);
-		cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+		glm::vec3 cameraPos = glm::vec3(15.0f, 15.0f, 18.0f);
+		glm::vec3 cameraFront = glm::vec3(3.0f, 3.0f, 3.0f);
+		glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 		cameraSpeed = 0.005f;
 
 	}
@@ -269,7 +269,7 @@ void Aplication::processInput() {
 		mKeyPressed = false;
 	}
 
-	if (controlMode && playbackMode != PlaybackMode :: PLAYBACK) {
+	if (controlMode && playbackMode != PlaybackMode::PLAYBACK) {
 		static float lastFrame = 0.0f;
 		float currentFrame = glfwGetTime();
 		float deltaTime = currentFrame - lastFrame;
@@ -380,11 +380,11 @@ void Aplication::processInput() {
 
 }
 
-	bool prim = false;
+
+bool prim = false, first=false;
+glm::mat4 modelMat51 = glm::mat4(1.0f);
 void Aplication::run() {
-
 	float lastFrame = 0.0f;
-
 	while (!glfwWindowShouldClose(window)) {
 
 		float currentFrame = glfwGetTime();
@@ -508,7 +508,9 @@ void Aplication::run() {
 
 		// --- Rysowanie czwartego modelu  ---
 		glm::mat4 modelMat4 = glm::mat4(1.0f);
-		modelMat4 = glm::translate(modelMat4, glm::vec3(0.0f, -0.2f + rotationZ, 0.0f));
+		if(!prim) modelMat4 = glm::translate(modelMat4, glm::vec3(0.0f, -0.2f + rotationZ, 0.0f));
+		else modelMat4 = glm::translate(modelMat4, glm::vec3(0.0f,  rotationZ, 0.0f));
+		
 		//modelMat4 = glm::scale(modelMat4, glm::vec3(0.7f));
 		glm::mat4 mvp4 = projection * view * modelMat1 * modelMat2 * modelMat3 * modelMat4;
 
@@ -537,22 +539,30 @@ void Aplication::run() {
 
 		glm::mat4 modelMat5 = glm::mat4(1.0f);
 		//modelMat5 = glm::scale(modelMat5, glm::vec3(0.1f));
-		if (!prim) {
+		if (!prim && !first) {
 			modelMat5 = glm::translate(modelMat5, glm::vec3(4.0f, 0.0f, 3.0f));
 		}
-		else {
-			glm::vec3 arm3BottomPos = glm::vec3(0.0f, -0.2f, 0.0f); // Pozycja względem Ramienia3
+		else if (prim) {
+			glm::vec3 arm3BottomPos = glm::vec3(0.0f, 0.0f, 0.0f); // Pozycja względem Ramienia3
 			arm3BottomPos = glm::vec3(arm3modelMatrix * glm::vec4(arm3BottomPos, 1.0f));
 
 			// Ustaw pozycję prymitywu
-			modelMat5 = glm::translate(modelMat5, arm3BottomPos + glm::vec3(0.0f,-0.25f,0.0f));
+			modelMat5 = glm::translate(modelMat5, arm3BottomPos + glm::vec3(0.0f, -0.25f, 0.0f));
+			modelMat51 = modelMat5;
 		}
-		
-		
+		else if(!prim && first) {
+			if(modelMat51[3].y<=0) modelMat51[3].y =0;
+			else modelMat51[3].y -= 0.01f;
 			
+			modelMat5 = modelMat51;
 			
-		
-		glm::mat4 mvp5 = projection* view* modelMat5;
+		}
+
+
+
+
+
+		glm::mat4 mvp5 = projection * view * modelMat5;
 
 		shader->use();
 		shader->setMat4("mvp", mvp5);
@@ -568,9 +578,18 @@ void Aplication::run() {
 		if (!prim && minWorld.x <= primMaxWorld.x && maxWorld.x >= primMinWorld.x &&
 			minWorld.y <= primMaxWorld.y && maxWorld.y >= primMinWorld.y &&
 			minWorld.z <= primMaxWorld.z && maxWorld.z >= primMinWorld.z) {
+
+			if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {
 			prim = true;
-		}
+			first = true;
+			}
 		
+		}
+
+		if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+			prim = false;
+
+		}
 
 
 
