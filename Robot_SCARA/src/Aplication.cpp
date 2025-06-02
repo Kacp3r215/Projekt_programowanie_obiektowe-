@@ -86,7 +86,7 @@ Aplication::Aplication(int width, int height, const string& title) {
 	shader = make_unique<Shader>("..//Robot_SCARA//assets//vertex.glsl", "..//Robot_SCARA//assets//fragment.glsl");
 	shader1 = make_unique<Shader>("..//Robot_SCARA//assets//vertex.glsl", "..//Robot_SCARA//assets//fragment2.glsl");
 
-	groundGrid = make_unique<Mesh>(Mesh::CreateGrid("GroundGrid", 10.0f, 20));
+	groundGrid = make_unique<Mesh>(Mesh::CreateGrid("GroundGrid", 20.0f, 20));
 
 }
 
@@ -262,11 +262,11 @@ void Aplication::processInput() {
 
 			if (mode1) {
 				rotationY += rotationSpeed;
-				rotationY = glm::clamp(rotationY, -160.0f, 160.0f);
+				rotationY = glm::clamp(rotationY, -130.0f, 160.0f);
 			}
 			if (mode2) {
 				rotationY1 += rotationSpeed;
-				rotationY1 = glm::clamp(rotationY1, -140.0f, 140.0f);
+				rotationY1 = glm::clamp(rotationY1, -130.0f, 140.0f);
 			}
 
 
@@ -275,23 +275,23 @@ void Aplication::processInput() {
 
 				rotationZ -= rotationSpeed1;
 
-				rotationZ = glm::clamp(rotationZ, -2.2f, -0.2f);
+				rotationZ = glm::clamp(rotationZ, -1.9f, -0.2f);
 			}
 		}
 
 		if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
 			if (mode1) {
 				rotationY -= rotationSpeed;
-				rotationY = glm::clamp(rotationY, -160.0f, 160.0f);
+				rotationY = glm::clamp(rotationY, -130.0f, 160.0f);
 			}
 			if (mode2) {
 				rotationY1 -= rotationSpeed;
-				rotationY1 = glm::clamp(rotationY1, -140.0f, 140.0f);
+				rotationY1 = glm::clamp(rotationY1, -130.0f, 140.0f);
 			}
 			if (mode3) {
 				rotationZ += rotationSpeed1;
 
-				rotationZ = glm::clamp(rotationZ, -2.5f, -0.2f);
+				rotationZ = glm::clamp(rotationZ, -1.9f, -0.2f);
 
 			}
 
@@ -336,7 +336,7 @@ void Aplication::run() {
 
 		glm::mat4 gridModel = glm::mat4(1.0f);
 		gridModel = glm::translate(gridModel, glm::vec3(0.0f, -0.01f, 0.0f)); // Lekko poniżej 0, aby uniknąć "z-fighting"
-		gridModel = glm::scale(gridModel, glm::vec3(0.5f));
+		//gridModel = glm::scale(gridModel, glm::vec3(0.5f));
 		shader->setMat4("mvp", projection * view * gridModel);
 		shader->setMat4("model", gridModel);
 		shader->setVec3("lightColor", glm::vec3(0.2f, 0.2f, 0.2f)); // Szare światło dla siatki
@@ -361,7 +361,7 @@ void Aplication::run() {
 		//glm::vec3 pivot = glm::vec3(-1.5f, 0.25f, 0.0f);
 
 		glm::mat4 modelMat1 = glm::mat4(1.0f);
-		modelMat1 = glm::scale(modelMat1, glm::vec3(0.1f));
+		//modelMat1 = glm::scale(modelMat1, glm::vec3(0.1f));
 		glm::mat4 mvp1 = projection * view * modelMat1;
 		shader->use();
 		shader->setMat4("mvp", mvp1);
@@ -422,7 +422,7 @@ void Aplication::run() {
 		// --- Rysowanie czwartego modelu  ---
 		glm::mat4 modelMat4 = glm::mat4(1.0f);
 		modelMat4 = glm::translate(modelMat4, glm::vec3(0.0f, -0.2f + rotationZ, 0.0f));
-		modelMat4 = glm::scale(modelMat4, glm::vec3(0.7f));
+		//modelMat4 = glm::scale(modelMat4, glm::vec3(0.7f));
 		glm::mat4 mvp4 = projection * view * modelMat1 * modelMat2 * modelMat3 * modelMat4;
 
 		if (mode3) {
@@ -437,9 +437,9 @@ void Aplication::run() {
 		}
 		Arm3->Draw();
 
-		glm::mat4 modelMatrix = modelMat1 * modelMat2 * modelMat3 * modelMat4;
-		glm::vec3 minWorld = glm::vec3(modelMatrix * glm::vec4(globalMin1, 1.0f));
-		glm::vec3 maxWorld = glm::vec3(modelMatrix * glm::vec4(globalMax2, 1.0f));
+		glm::mat4 arm3modelMatrix = modelMat1 * modelMat2 * modelMat3 * modelMat4;
+		glm::vec3 minWorld = glm::vec3(arm3modelMatrix * glm::vec4(globalMin1, 1.0f));
+		glm::vec3 maxWorld = glm::vec3(arm3modelMatrix * glm::vec4(globalMax2, 1.0f));
 
 
 
@@ -450,15 +450,25 @@ void Aplication::run() {
 
 		glm::mat4 modelMat5 = glm::mat4(1.0f);
 		//modelMat5 = glm::scale(modelMat5, glm::vec3(0.1f));
-		modelMat5 = glm::translate(modelMat5, glm::vec3(0.5f, 0.0f, 0.0f));
+		if (!prim) {
+			modelMat5 = glm::translate(modelMat5, glm::vec3(4.0f, 0.0f, 3.0f));
+		}
+		else {
+			glm::vec3 arm3BottomPos = glm::vec3(0.0f, -0.2f, 0.0f); // Pozycja względem Ramienia3
+			arm3BottomPos = glm::vec3(arm3modelMatrix * glm::vec4(arm3BottomPos, 1.0f));
 
-		glm::mat4 mvp5;
-
-		if (prim == false) mvp5 = projection * view * modelMat5;
-		else mvp5 = projection * view * modelMat1 * modelMat2 * modelMat3 * modelMat4 * modelMat5;
+			// Ustaw pozycję prymitywu
+			modelMat5 = glm::translate(modelMat5, arm3BottomPos + glm::vec3(0.0f,-0.25f,0.0f));
+		}
+		
+		
+			
+			
+		
+		glm::mat4 mvp5 = projection* view* modelMat5;
 
 		shader->use();
-		shader->setMat4("mvp", mvp5 * (1.0f / 0.007f));
+		shader->setMat4("mvp", mvp5);
 		shader->setMat4("model", modelMat5);
 		prymityw->Draw();
 
@@ -468,7 +478,7 @@ void Aplication::run() {
 
 
 
-		if (minWorld.x <= primMaxWorld.x && maxWorld.x >= primMinWorld.x &&
+		if (!prim && minWorld.x <= primMaxWorld.x && maxWorld.x >= primMinWorld.x &&
 			minWorld.y <= primMaxWorld.y && maxWorld.y >= primMinWorld.y &&
 			minWorld.z <= primMaxWorld.z && maxWorld.z >= primMinWorld.z) {
 			prim = true;
