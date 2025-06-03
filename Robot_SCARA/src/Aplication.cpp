@@ -174,7 +174,7 @@ void Aplication::updatePlayback(float deltaTime) {
 	else if (playbackMode == PlaybackMode::PLAYBACK && !movementSequence.empty()) {
 		// Tymczasowo wyłącz controlMode podczas odtwarzania
 		bool wasControlMode = controlMode;
-		controlMode = false;
+		controlMode =  false;
 
 		playbackTimer += deltaTime * playbackSpeed * 5.0f;
 
