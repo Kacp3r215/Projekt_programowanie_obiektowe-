@@ -64,14 +64,16 @@ private:
 
 	// ZMIENNE TRYBU UCZENIA
 	PlaybackMode playbackMode = PlaybackMode::NORMAL;
-	vector <tuple<float, float, float>> movementSequence;
+	vector <tuple<float, float, float, bool, bool, glm::mat4>> movementSequence;
 	float playbackSpeed = 1.0f;
 	size_t currentPlaybackIndex = 0;
 	float playbackTimer = 2.0f;
+	bool prim = false;
+	bool first = false;
 
+	glm::mat4 modelMat51 = glm::mat4(1.0f);
 
-
-
+	
 	void initGLFW();
 	void CreateWindow(int width, int height, const string& title);
 	void processInput();

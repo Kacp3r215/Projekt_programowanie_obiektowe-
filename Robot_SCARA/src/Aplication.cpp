@@ -91,6 +91,9 @@ Aplication::Aplication(int width, int height, const string& title) {
 
 	groundGrid = make_unique<Mesh>(Mesh::CreateGrid("GroundGrid", 20.0f, 20));
 
+	modelMat51 = glm::mat4(1.0f);
+	modelMat51 = glm::translate(modelMat51, glm::vec3(4.0f, 0.0f, 3.0f));
+
 }
 
 //definicja destruktora
@@ -169,7 +172,7 @@ void Aplication::mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 
 void Aplication::updatePlayback(float deltaTime) {
 	if (playbackMode == PlaybackMode::RECORDING) {
-		movementSequence.emplace_back(rotationY, rotationY1, rotationZ);
+		movementSequence.emplace_back(rotationY, rotationY1, rotationZ,prim,first,modelMat51);
 	}
 	else if (playbackMode == PlaybackMode::PLAYBACK && !movementSequence.empty()) {
 		// Tymczasowo wyłącz controlMode podczas odtwarzania
@@ -183,11 +186,21 @@ void Aplication::updatePlayback(float deltaTime) {
 		rotationY = std::get<0>(frame);
 		rotationY1 = std::get<1>(frame);
 		rotationZ = std::get<2>(frame);
+		prim = get<3>(frame);
+		first = get<4>(frame);
+		modelMat51 = get<5>(frame);
 
 		playbackTimer += deltaTime;
 		if (playbackTimer >= (1.0f / 120.0f)) {  // 60 FPS
 			playbackTimer = 0.0f;
 			currentPlaybackIndex = (currentPlaybackIndex + 1) % movementSequence.size();
+			if (currentPlaybackIndex == 0) {
+				
+				modelMat51 = glm::mat4(1.0f);
+				modelMat51 = glm::translate(modelMat51, glm::vec3(4.0f, 0.0f, 3.0f));
+				prim = false;
+				first = false;
+			}
 
 			// Dodajemy debugowy output
 			std::cout << "Playing frame " << currentPlaybackIndex
@@ -363,6 +376,12 @@ void Aplication::processInput() {
 				playbackMode = PlaybackMode::PLAYBACK;
 				currentPlaybackIndex = 0;
 				playbackTimer = 0.0f;
+				prim = false;
+				first = false;
+				
+				modelMat51 = glm::mat4(1.0f);
+				modelMat51 = glm::translate(modelMat51, glm::vec3(4.0f, 0.0f, 3.0f));
+				
 				std::cout << "Rozpoczęto odtwarzanie sekwencji. Liczba klatek: "
 					<< movementSequence.size() << std::endl;
 			}
@@ -381,10 +400,11 @@ void Aplication::processInput() {
 }
 
 
-bool prim = false, first=false;
-glm::mat4 modelMat51 = glm::mat4(1.0f);
+
+
 void Aplication::run() {
 	float lastFrame = 0.0f;
+	static bool firstRun = true;
 	while (!glfwWindowShouldClose(window)) {
 
 		float currentFrame = glfwGetTime();
@@ -539,24 +559,35 @@ void Aplication::run() {
 
 		glm::mat4 modelMat5 = glm::mat4(1.0f);
 		//modelMat5 = glm::scale(modelMat5, glm::vec3(0.1f));
-		if (!prim && !first) {
-			modelMat5 = glm::translate(modelMat5, glm::vec3(4.0f, 0.0f, 3.0f));
+		if (playbackMode == PlaybackMode::PLAYBACK) {
+			// Resetuj pozycję tylko gdy:
+			// 1. Odtwarzanie się zakończyło (currentPlaybackIndex == 0)
+			// 2. Robot wrócił do pozycji startowej
+			if (currentPlaybackIndex == 0 &&
+				abs(rotationY) < 1.0f &&
+				abs(rotationY1) < 1.0f &&
+				abs(rotationZ + 1.0f) < 0.1f) {
+				modelMat51 = glm::translate(glm::mat4(1.0f), glm::vec3(4.0f, 0.0f, 3.0f));
+			}
 		}
-		else if (prim) {
-			glm::vec3 arm3BottomPos = glm::vec3(0.0f, 0.0f, 0.0f); // Pozycja względem Ramienia3
-			arm3BottomPos = glm::vec3(arm3modelMatrix * glm::vec4(arm3BottomPos, 1.0f));
+		else {
+			// Tryb NORMAL/RECORDING - normalna logika podnoszenia/upuszczania
+			if (prim) {
+				glm::vec3 arm3BottomPos = glm::vec3(arm3modelMatrix * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+				modelMat51 = glm::translate(glm::mat4(1.0f), arm3BottomPos + glm::vec3(0.0f, -0.25f, 0.0f));
+			}
+			else if (first) {
+				if (modelMat51[3].y <= 0) {
+					modelMat51[3].y = 0;
+					first = false;
+				}
+				else {
+					modelMat51[3].y -= 0.01f;
+				}
+			}
+		}
 
-			// Ustaw pozycję prymitywu
-			modelMat5 = glm::translate(modelMat5, arm3BottomPos + glm::vec3(0.0f, -0.25f, 0.0f));
-			modelMat51 = modelMat5;
-		}
-		else if(!prim && first) {
-			if(modelMat51[3].y<=0) modelMat51[3].y =0;
-			else modelMat51[3].y -= 0.01f;
-			
-			modelMat5 = modelMat51;
-			
-		}
+		modelMat5 = modelMat51;
 
 
 
