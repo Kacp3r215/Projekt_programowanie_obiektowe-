@@ -170,6 +170,7 @@ void Aplication::mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 
 }
 
+
 void Aplication::updatePlayback(float deltaTime) {
 	if (playbackMode == PlaybackMode::RECORDING) {
 		movementSequence.emplace_back(rotationY, rotationY1, rotationZ,prim,first,modelMat51);
@@ -211,6 +212,92 @@ void Aplication::updatePlayback(float deltaTime) {
 
 		controlMode = wasControlMode;
 	}
+}
+
+
+void Aplication::calculateInverseKinematics(const glm::vec3& target) {
+	//dłygości ramion i ogrniczenie chwytaka 
+	const float L1 = 4.9f;
+	const float L2 = 4.1f;
+	const float Z_MIN = -1.9f;
+	const float Z_MAX = -0.2f;
+	
+	//pozycja w XY
+	float x = target.x;
+	float y = target.z;
+
+	//obliczenie kątów IK
+	float D = (x * x + y * y - L1 * L1 - L2 * L2);
+	D = glm::clamp(D, -1.0f, 1.0f);
+
+	float theta2 = acos(D);
+	float theta1 = atan2(y, x) - atan2(L2 * sin(theta2), L1 + L2 * cos(theta2));
+
+
+
+	//konwersja radinów na stopnie
+	rotationY = glm::degrees(theta1);
+	rotationY1 = glm::degrees(theta2) - 90.0f;
+
+	//Pozycja Z:
+	float z_norm = (target.y - 1.79f) / 2.0f;
+	rotationZ = glm::mix(Z_MIN, Z_MAX, z_norm);
+
+	//Ograniczenia ruchów
+	rotationY = glm::clamp(rotationY, -130.0f, 130.0f);
+	rotationY1 = glm::clamp(rotationY1, -130.0f, 130.0f);
+	rotationZ = glm::clamp(rotationZ, Z_MIN, Z_MAX);
+
+	isMovingToTarget = true;
+	movementProgress = 0.0f;
+}
+
+
+
+
+void Aplication::setPositioningMode(bool enable) {
+	positioningMode = enable;
+	if (enable) {
+		cout << "Tryb pozycjonowania Włączony. Wprowadź współrzędne (x,y,z): ";
+	}
+	else {
+		cout << "Tryb pozycjonowania wyłączony." << endl;
+	}
+}
+
+void Aplication::updatePositioning() {
+	if (!positioningMode) return;
+
+	//wprowadzanie współrzędnych 
+	static bool inputStarted = false;
+	static glm::vec3 inputCoords;
+	static int coordsEnterned = 0;
+
+	if (!inputStarted) {
+		inputStarted = true;
+		coordsEnterned = 0;
+		cout << "Wprowadz x: ";
+	}
+
+	if (coordsEnterned == 0) {
+		inputCoords.x = 4.0f;
+		coordsEnterned++;
+		cout << "Wprowadz y: ";
+	}
+	else if (coordsEnterned == 1) {
+		inputCoords.y = 0.0f;
+		coordsEnterned++;
+		cout << "Wprowadz z: ";
+	}
+	else if (coordsEnterned == 2) {
+		inputCoords.z = 5.0f;
+		coordsEnterned++;
+	}
+
+	calculateInverseKinematics(inputCoords);
+	positioningMode = false;
+	inputStarted = false;
+
 }
 
 
@@ -314,11 +401,11 @@ void Aplication::processInput() {
 
 			if (mode1) {
 				rotationY += rotationSpeed;
-				rotationY = glm::clamp(rotationY, -130.0f, 160.0f);
+				rotationY = glm::clamp(rotationY, -130.0f, 130.0f);
 			}
 			if (mode2) {
 				rotationY1 += rotationSpeed;
-				rotationY1 = glm::clamp(rotationY1, -130.0f, 140.0f);
+				rotationY1 = glm::clamp(rotationY1, -130.0f, 130.0f);
 			}
 
 
@@ -334,11 +421,11 @@ void Aplication::processInput() {
 		if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
 			if (mode1) {
 				rotationY -= rotationSpeed;
-				rotationY = glm::clamp(rotationY, -130.0f, 160.0f);
+				rotationY = glm::clamp(rotationY, -130.0f, 130.0f);
 			}
 			if (mode2) {
 				rotationY1 -= rotationSpeed;
-				rotationY1 = glm::clamp(rotationY1, -130.0f, 140.0f);
+				rotationY1 = glm::clamp(rotationY1, -130.0f, 130.0f);
 			}
 			if (mode3) {
 				rotationZ += rotationSpeed1;
@@ -395,7 +482,16 @@ void Aplication::processInput() {
 			std::cout << "Brak sekwencji do odtworzenia!" << std::endl;
 		}
 	}
-
+	
+	//włączenie trybu pozycjonowania:
+	static bool nKeyPressed = false;
+	if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS && !nKeyPressed) {
+		setPositioningMode(!positioningMode);
+		nKeyPressed = true;
+	}
+	else if (glfwGetKey(window, GLFW_KEY_N) == GLFW_RELEASE) {
+		nKeyPressed = false;
+	}
 
 }
 
@@ -416,6 +512,10 @@ void Aplication::run() {
 
 		if (playbackMode != PlaybackMode::NORMAL) {
 			updatePlayback(deltaTime);
+		}
+
+		if (positioningMode) {
+			updatePositioning();
 		}
 
 		glfwPollEvents();

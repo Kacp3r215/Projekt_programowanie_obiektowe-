@@ -73,11 +73,29 @@ private:
 
 	glm::mat4 modelMat51 = glm::mat4(1.0f);
 
+	//Tryb automatycznego pozycjonowania 
+	bool positioningMode = false;
+	glm::vec3 targetPosition = glm::vec3(0.0f);
+	
+
+	
+	bool isMovingToTarget = false;
+	float movementProgress = 0.0f;
+	const float movementSpeed = 1.5f;
+
 	
 	void initGLFW();
 	void CreateWindow(int width, int height, const string& title);
 	void processInput();
+	//Tryb uczenia
 	void updatePlayback(float deltaTime);
+
+	//Tryb pzycjonowania:
+	void calculateInverseKinematics(const glm::vec3& target);
+	void setPositioningMode(bool enable);
+	void updatePositioning();
+	
+
 	static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 	static void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 
