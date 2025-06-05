@@ -10,6 +10,7 @@
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
 #include <GLFW/glfw3.h>
+#include "Primitive.h"
 
 using namespace std;
 
@@ -37,6 +38,8 @@ private:
 	unique_ptr<Model> Arm2;
 	unique_ptr<Model> Arm3;
 	unique_ptr<Model> prymityw;
+	vector<unique_ptr<Primitive>> prymitywy;
+	vector<bool>pri;
 
 	unique_ptr<Shader> shader;
 	unique_ptr<Shader> shader1;
@@ -64,7 +67,7 @@ private:
 
 	// ZMIENNE TRYBU UCZENIA
 	PlaybackMode playbackMode = PlaybackMode::NORMAL;
-	vector <tuple<float, float, float, bool, bool, glm::mat4>> movementSequence;
+	vector <tuple<float, float, float, bool, bool>> movementSequence;
 	float playbackSpeed = 1.0f;
 	size_t currentPlaybackIndex = 0;
 	float playbackTimer = 2.0f;
@@ -76,26 +79,24 @@ private:
 	//Tryb automatycznego pozycjonowania 
 	bool positioningMode = false;
 	glm::vec3 targetPosition = glm::vec3(0.0f);
-	
 
-	
+
+
 	bool isMovingToTarget = false;
 	float movementProgress = 0.0f;
 	const float movementSpeed = 1.5f;
 
-	
+
+
+
 	void initGLFW();
 	void CreateWindow(int width, int height, const string& title);
-	void processInput();
-	//Tryb uczenia
+	bool processInput();
 	void updatePlayback(float deltaTime);
-
 	//Tryb pzycjonowania:
 	void calculateInverseKinematics(const glm::vec3& target);
 	void setPositioningMode(bool enable);
 	void updatePositioning();
-	
-
 	static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 	static void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 
