@@ -135,6 +135,7 @@
     <ClCompile Include="src\Aplication.cpp" />
     <ClCompile Include="src\Mesh.cpp" />
     <ClCompile Include="src\Model.cpp" />
+    <ClCompile Include="src\Primitive.cpp" />
     <ClCompile Include="src\Shader.cpp" />
     <ClCompile Include="stb.cpp" />
   </ItemGroup>
@@ -142,6 +143,7 @@
     <ClInclude Include="INCLUDE\Aplication.h" />
     <ClInclude Include="INCLUDE\Mesh.h" />
     <ClInclude Include="INCLUDE\Model.h" />
+    <ClInclude Include="INCLUDE\Primitive.h" />
     <ClInclude Include="INCLUDE\Shader.h" />
   </ItemGroup>
   <ItemGroup>

@@ -2,6 +2,8 @@
 #include <glm.hpp>
 #include <iostream>
 #include "Aplication.h"
+#include <iostream>
+#include <sstream>
 
 /* STEROWANIE ROBOTEM
  * M - przełacza tryb sterowania
@@ -198,39 +200,45 @@ void Aplication::updatePlayback(float deltaTime) {
     }
 }
 
-void Aplication::calculateInverseKinematics(const glm::vec3& target) {
-    // dłygości ramion i ogrniczenie chwytaka
-    const float L1 = 4.9f;
-    const float L2 = 4.1f;
+void Aplication::calculateInverseKinematics(const glm::vec3& target, float& outY, float& outY1, float& outZ) {
+    const float L1 = 4.9f;  // Długość pierwszego ramienia
+    const float L2 = 4.1f;  // Długość drugiego ramienia
     const float Z_MIN = -1.9f;
     const float Z_MAX = -0.2f;
 
-    // pozycja w XY
+    // Konwersja współrzędnych do układu robota
     float x = target.x;
-    float y = target.z;
+    float y = target.z;  // Zamiana osi Z na Y w układzie robota
+    float z = target.y;  // Wysokość
 
-    // obliczenie kątów IK
-    float D = (x * x + y * y - L1 * L1 - L2 * L2);
-    D = glm::clamp(D, -1.0f, 1.0f);
+    // Oblicz odległość w płaszczyźnie XY
+    float D = sqrt(x * x + y * y);
 
-    float theta2 = acos(D);
+    // Sprawdź czy punkt jest osiągalny
+    if (D > L1 + L2 || D < fabs(L1 - L2)) {
+        std::cout << "Punkt poza zasięgiem robota!" << std::endl;
+        return;
+    }
+
+    // Oblicz kąty
+    float cosTheta2 = (D * D - L1 * L1 - L2 * L2) / (2 * L1 * L2);
+    cosTheta2 = glm::clamp(cosTheta2, -1.0f, 1.0f);
+    float theta2 = acos(cosTheta2);
+
     float theta1 = atan2(y, x) - atan2(L2 * sin(theta2), L1 + L2 * cos(theta2));
 
-    // konwersja radinów na stopnie
-    rotationY = glm::degrees(theta1);
-    rotationY1 = glm::degrees(theta2) - 90.0f;
+    // Konwersja na stopnie i ustawienie ograniczeń
+    outY = glm::degrees(theta1);
+    outY1 = glm::degrees(theta2) - 90.0f;  // Korekta dla układu robota
 
-    // Pozycja Z:
-    float z_norm = (target.y - 1.79f) / 2.0f;
-    rotationZ = glm::mix(Z_MIN, Z_MAX, z_norm);
+    // Normalizacja wysokości
+    float z_norm = (z - 1.79f) / 2.0f;  // 1.79 to wysokość bazowa
+    outZ = glm::mix(Z_MIN, Z_MAX, z_norm);
 
     // Ograniczenia ruchów
-    rotationY = glm::clamp(rotationY, -130.0f, 130.0f);
-    rotationY1 = glm::clamp(rotationY1, -130.0f, 130.0f);
-    rotationZ = glm::clamp(rotationZ, Z_MIN, Z_MAX);
-
-    isMovingToTarget = true;
-    movementProgress = 0.0f;
+    outY = glm::clamp(outY, -130.0f, 130.0f);
+    outY1 = glm::clamp(outY1, -130.0f, 130.0f);
+    outZ = glm::clamp(outZ, Z_MIN, Z_MAX);
 }
 
 void Aplication::setPositioningMode(bool enable) {
@@ -243,38 +251,77 @@ void Aplication::setPositioningMode(bool enable) {
     }
 }
 
+//float Aplication::moveTowards(float current, float target, float maxDelta) {
+   // if (fabs(target - current) <= maxDelta) {
+  //      return target;
+  //  }
+ //   return current + ((target > current) ? maxDelta : -maxDelta);
+//}
+
+/*void Aplication::updateAnimation(float deltaTime) {
+    if (!isAnimating) return;
+
+    // Stała szybkości animacji (stopnie na sekundę)
+    const float ROTATION_SPEED = 90.0f;
+    const float Z_SPEED = 1.0f;
+
+    // Oblicz maksymalną zmianę na podstawie czasu
+    float maxRotationChange = ROTATION_SPEED * deltaTime;
+    float maxZChange = Z_SPEED * deltaTime;
+
+    // Interpoluj każdy kąt osobno
+    rotationY = moveTowards(rotationY, targetAngles.x, maxRotationChange);
+    rotationY1 = moveTowards(rotationY1, targetAngles.y, maxRotationChange);
+    rotationZ = moveTowards(rotationZ, targetAngles.z, maxZChange);
+
+    // Sprawdź czy osiągnięto cel z większą tolerancją
+    float epsilon = 0.5f; // Zwiększona tolerancja
+    if (fabs(rotationY - targetAngles.x) < epsilon &&
+        fabs(rotationY1 - targetAngles.y) < epsilon &&
+        fabs(rotationZ - targetAngles.z) < epsilon) {
+        isAnimating = false;
+        // Dokładne ustawienie na cel
+        rotationY = targetAngles.x;
+        rotationY1 = targetAngles.y;
+        rotationZ = targetAngles.z;
+    }
+}
+*/
 void Aplication::updatePositioning() {
     if (!positioningMode) return;
 
-    // wprowadzanie współrzędnych
-    static bool inputStarted = false;
-    static glm::vec3 inputCoords;
-    static int coordsEnterned = 0;
+    cout << "Wprowadz wspolrzedne (x y z), oddzielone spacjami: ";
+    string input;
+    getline(std::cin, input);
 
-    if (!inputStarted) {
-        inputStarted = true;
-        coordsEnterned = 0;
-        cout << "Wprowadz x: ";
+    std::istringstream iss(input);
+    float x, y, z;
+    if (iss >> x >> y >> z) {
+        inputCoords = glm::vec3(x, y, z);
+
+        // Sprawdź czy punkt jest w zasięgu robota
+        float distance = glm::length(glm::vec2(x, z));
+        if (distance > 9.0f || distance < 1.0f || y < 0.0f || y > 3.0f) {
+            std::cout << "Punkt poza zakresem robota!" << std::endl;
+            positioningMode = false;
+            return;
+        }
+
+        std::cout << "Obliczam kinematykę odwrotną dla punktu: ("
+            << x << ", " << y << ", " << z << ")" << std::endl;
+
+        // Bezpośrednie przypisanie kątów bez animacji
+        calculateInverseKinematics(inputCoords, rotationY, rotationY1, rotationZ);
+
+        std::cout << "Ustawiono kąty: Y=" << rotationY
+            << ", Y1=" << rotationY1
+            << ", Z=" << rotationZ << std::endl;
+    }
+    else {
+        std::cout << "Nieprawidłowy format danych!" << std::endl;
     }
 
-    if (coordsEnterned == 0) {
-        inputCoords.x = 4.0f;
-        coordsEnterned++;
-        cout << "Wprowadz y: ";
-    }
-    else if (coordsEnterned == 1) {
-        inputCoords.y = 0.0f;
-        coordsEnterned++;
-        cout << "Wprowadz z: ";
-    }
-    else if (coordsEnterned == 2) {
-        inputCoords.z = 5.0f;
-        coordsEnterned++;
-    }
-
-    calculateInverseKinematics(inputCoords);
     positioningMode = false;
-    inputStarted = false;
 }
 
 bool Aplication::processInput() {
@@ -461,9 +508,14 @@ bool Aplication::processInput() {
     static bool nKeyPressed = false;
     if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS && !nKeyPressed) {
         setPositioningMode(!positioningMode);
+        if (positioningMode) {
+            // Wymuszenie odczytu z konsoli
+            glfwPollEvents(); // Opróżnij bufor zdarzeń
+            updatePositioning();
+        }
         nKeyPressed = true;
     }
-    else if (glfwGetKey(window, GLFW_KEY_N) == GLFW_RELEASE) {
+    else if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS) {
         nKeyPressed = false;
     }
 
@@ -486,6 +538,10 @@ void Aplication::run() {
         if (positioningMode) {
             updatePositioning();
         }
+
+       // if (isAnimating) {
+       //     updateAnimation(deltaTime);
+      //  }
 
         glfwPollEvents();
 

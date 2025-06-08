@@ -79,12 +79,16 @@ private:
 	//Tryb automatycznego pozycjonowania 
 	bool positioningMode = false;
 	glm::vec3 targetPosition = glm::vec3(0.0f);
+	glm::vec3 inputCoords = glm::vec3(0.0f);
+	glm::vec3 targetAngles = glm::vec3(0.0f);
+	//bool isAnimating = false;
+	//float animationSpeed = 1.0f;
 
 
 
 	bool isMovingToTarget = false;
-	float movementProgress = 0.0f;
-	const float movementSpeed = 1.5f;
+	//float movementProgress = 0.0f;
+	//const float movementSpeed = 1.5f;
 
 
 
@@ -94,9 +98,13 @@ private:
 	bool processInput();
 	void updatePlayback(float deltaTime);
 	//Tryb pzycjonowania:
-	void calculateInverseKinematics(const glm::vec3& target);
+	void calculateInverseKinematics(const glm::vec3& target,float& outY, float& outY1,float& outZ);
 	void setPositioningMode(bool enable);
 	void updatePositioning();
+	//void updateAnimation(float deltaTime);
+	//float moveTowards(float current, float target, float maxDelta);
+
+
 	static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 	static void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 
