@@ -16,12 +16,14 @@
  * OBSŁUGA TRYBU UCZENIA
  * KLIKNAC M NASTEPNIE L WYKONAC JAKIES RUCHY PRZY POMOCY 1 2 3 I STRZALEK
  * ZNOWU KLIKNAC L ZEBY ZAKONCZYC NAGRYWANIE, NACISNAC K ZEBY URUCHOMIC ODTWARZANIE
+ * OBSLUGA TRYBU POZYCJONOWANIA
+ * KLIKNAC N, WPISAC WSPOLRZEDNE W KONSOLI I ZAAKCEPTOWAC KLIKAJAC ENTER
  */
 
 using namespace std;
 
 glm::vec3 globalMin1, globalMax2, globalMin3, globalMax4;
-// definicja kontruktora
+// DEFINICJA KONSTRUKTORA
 Aplication::Aplication(int width, int height, const string& title) {
     initGLFW();
 
@@ -39,6 +41,8 @@ Aplication::Aplication(int width, int height, const string& title) {
 
     projection = glm::perspective(glm::radians(45.0f), float(width) / float(height), 0.1f, 100.0f);
 
+    // WCZYTANIE MODELI
+
     Base = make_unique<Model>("..//Robot_SCARA//assets//Podstawa.obj");
     Arm1 = make_unique<Model>("..//Robot_SCARA//assets//Ramie1.obj");
     Arm2 = make_unique<Model>("..//Robot_SCARA//assets//Ramie2.obj");
@@ -48,7 +52,7 @@ Aplication::Aplication(int width, int height, const string& title) {
     prymitywy.push_back(make_unique<Primitive>("..//Robot_SCARA//assets//prymityw.obj", glm::vec3(4.0f, 0.0f, 3.0f)));
     pri.push_back(false);
 
-    // informacja gdzie lezy najmniejszy i najwiekszy wierzcholek
+    // INFORMACJA O MIN I MAX WIERZCHOLKACH
     Model* model = Arm3.get();
     glm::vec3 globalMin(FLT_MAX), globalMax(-FLT_MAX);
 
@@ -76,20 +80,17 @@ Aplication::Aplication(int width, int height, const string& title) {
     if (Base->meshes.empty()) {
         cout << "Blad: model nie awiera zadmych meshow" << endl;
     }
-    else {
-        cout << "Model za³¹dowany pomyœlnie, liczba meshow: " << Base->meshes.size() << endl;
-    }
+
+    //WCZYTANIE SHADEROW
 
     shader = make_unique<Shader>("..//Robot_SCARA//assets//vertex.glsl", "..//Robot_SCARA//assets//fragment.glsl");
     shader1 = make_unique<Shader>("..//Robot_SCARA//assets//vertex.glsl", "..//Robot_SCARA//assets//fragment2.glsl");
 
     groundGrid = make_unique<Mesh>(Mesh::CreateGrid("GroundGrid", 20.0f, 20));
 
-    // modelMat51 = glm::mat4(1.0f);
-    // modelMat51 = glm::translate(modelMat51, glm::vec3(4.0f, 0.0f, 3.0f));
 }
 
-// definicja destruktora
+// DEFINICJA DESTRUKTORA
 Aplication::~Aplication() {
     glfwDestroyWindow(window);
     glfwTerminate();
@@ -114,7 +115,7 @@ void Aplication::CreateWindow(int width, int height, const string& title) {
 }
 float cameraSpeed = 0.01f;
 
-// definicja obslugi scrolla
+// DEFINICJA OBSLUGI SCROLLA
 
 void Aplication::scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
     Aplication* app = static_cast<Aplication*>(glfwGetWindowUserPointer(window));
@@ -132,6 +133,8 @@ void Aplication::scroll_callback(GLFWwindow* window, double xoffset, double yoff
 double lastX = 0, lastY = 400;
 double offsetX = 0.0f, offsetY = 0.0f;
 bool firstMouse = true;
+
+//DEFINICJA OBSLUGI MYSZY
 
 void Aplication::mouse_callback(GLFWwindow* window, double xpos, double ypos) {
     Aplication* app = static_cast<Aplication*>(glfwGetWindowUserPointer(window));
@@ -155,6 +158,8 @@ void Aplication::mouse_callback(GLFWwindow* window, double xpos, double ypos) {
     }
 }
 
+//DEFINICJA TRYBU UCZENIA
+
 bool playback_c = false, playback_space = false;
 void Aplication::updatePlayback(float deltaTime) {
     if (playbackMode == PlaybackMode::RECORDING) {
@@ -173,7 +178,6 @@ void Aplication::updatePlayback(float deltaTime) {
 
         playbackTimer += deltaTime * playbackSpeed * 5.0f;
 
-        // Bez interpolacji - dokładne odtwarzanie
         auto& frame = movementSequence[currentPlaybackIndex];
         rotationY = std::get<0>(frame);
         rotationY1 = std::get<1>(frame);
@@ -182,23 +186,23 @@ void Aplication::updatePlayback(float deltaTime) {
         playback_space = get<4>(frame);
 
         playbackTimer += deltaTime;
-        if (playbackTimer >= (1.0f / 120.0f)) {  // 60 FPS
+        if (playbackTimer >= (1.0f / 120.0f)) { 
             playbackTimer = 0.0f;
             currentPlaybackIndex = (currentPlaybackIndex + 1) % movementSequence.size();
             if (currentPlaybackIndex == 0) {
-                // modelMat51 = glm::mat4(1.0f);
-                // modelMat51 = glm::translate(modelMat51, glm::vec3(4.0f, 0.0f, 3.0f));
                 prim = false;
                 first = false;
             }
 
-            // Dodajemy debugowy output
-            std::cout << "Playing frame " << currentPlaybackIndex << ": Y=" << rotationY << ", Y1=" << rotationY1 << ", Z=" << rotationZ << std::endl;
+            // DEBUGOWY OUTPUT
+            // cout << "Playing frame " << currentPlaybackIndex << ": Y=" << rotationY << ", Y1=" << rotationY1 << ", Z=" << rotationZ << std::endl;
         }
 
         controlMode = wasControlMode;
     }
 }
+
+// DEFINICJA KINEMATYKI ODWRÓCONEJ
 
 void Aplication::calculateInverseKinematics(const glm::vec3& target, float& outY, float& outY1, float& outZ) {
     const float L1 = 4.9f;  // Długość pierwszego ramienia
@@ -211,16 +215,16 @@ void Aplication::calculateInverseKinematics(const glm::vec3& target, float& outY
     float y = target.z;  // Zamiana osi Z na Y w układzie robota
     float z = target.y;  // Wysokość
 
-    // Oblicz odległość w płaszczyźnie XY
+    // Odległość w płaszczyźnie XY
     float D = sqrt(x * x + y * y);
 
-    // Sprawdź czy punkt jest osiągalny
+    // Sprawdzanie czy punkt jest osiągalny
     if (D > L1 + L2 || D < fabs(L1 - L2)) {
         std::cout << "Punkt poza zasięgiem robota!" << std::endl;
         return;
     }
 
-    // Oblicz kąty
+    // Obliczanie kątów
     float cosTheta2 = (D * D - L1 * L1 - L2 * L2) / (2 * L1 * L2);
     cosTheta2 = glm::clamp(cosTheta2, -1.0f, 1.0f);
     float theta2 = acos(cosTheta2);
@@ -251,55 +255,28 @@ void Aplication::setPositioningMode(bool enable) {
     }
 }
 
-//float Aplication::moveTowards(float current, float target, float maxDelta) {
-   // if (fabs(target - current) <= maxDelta) {
-  //      return target;
-  //  }
- //   return current + ((target > current) ? maxDelta : -maxDelta);
-//}
-
-/*void Aplication::updateAnimation(float deltaTime) {
-    if (!isAnimating) return;
-
-    // Stała szybkości animacji (stopnie na sekundę)
-    const float ROTATION_SPEED = 90.0f;
-    const float Z_SPEED = 1.0f;
-
-    // Oblicz maksymalną zmianę na podstawie czasu
-    float maxRotationChange = ROTATION_SPEED * deltaTime;
-    float maxZChange = Z_SPEED * deltaTime;
-
-    // Interpoluj każdy kąt osobno
-    rotationY = moveTowards(rotationY, targetAngles.x, maxRotationChange);
-    rotationY1 = moveTowards(rotationY1, targetAngles.y, maxRotationChange);
-    rotationZ = moveTowards(rotationZ, targetAngles.z, maxZChange);
-
-    // Sprawdź czy osiągnięto cel z większą tolerancją
-    float epsilon = 0.5f; // Zwiększona tolerancja
-    if (fabs(rotationY - targetAngles.x) < epsilon &&
-        fabs(rotationY1 - targetAngles.y) < epsilon &&
-        fabs(rotationZ - targetAngles.z) < epsilon) {
-        isAnimating = false;
-        // Dokładne ustawienie na cel
-        rotationY = targetAngles.x;
-        rotationY1 = targetAngles.y;
-        rotationZ = targetAngles.z;
-    }
-}
-*/
 void Aplication::updatePositioning() {
     if (!positioningMode) return;
+
+    if (Y_N || Y1_N || Z_N) {
+        std::cout << "Poczekaj aż robot zakończy poprzedni ruch!" << std::endl;
+        positioningMode = false;
+        return;
+    }
+
+
 
     cout << "Wprowadz wspolrzedne (x y z), oddzielone spacjami: ";
     string input;
     getline(std::cin, input);
+
 
     std::istringstream iss(input);
     float x, y, z;
     if (iss >> x >> y >> z) {
         inputCoords = glm::vec3(x, y, z);
 
-        // Sprawdź czy punkt jest w zasięgu robota
+        // Sprawdzanie czy punkt jest w zasięgu robota
         float distance = glm::length(glm::vec2(x, z));
         if (distance > 9.0f || distance < 1.0f || y < 0.0f || y > 3.0f) {
             std::cout << "Punkt poza zakresem robota!" << std::endl;
@@ -311,11 +288,15 @@ void Aplication::updatePositioning() {
             << x << ", " << y << ", " << z << ")" << std::endl;
 
         // Bezpośrednie przypisanie kątów bez animacji
-        calculateInverseKinematics(inputCoords, rotationY, rotationY1, rotationZ);
+        calculateInverseKinematics(inputCoords, rotationY_N, rotationY1_N, rotationZ_N);
 
-        std::cout << "Ustawiono kąty: Y=" << rotationY
-            << ", Y1=" << rotationY1
-            << ", Z=" << rotationZ << std::endl;
+        Y_N = true;
+		Y1_N = true;
+		Z_N = true;
+
+        std::cout << "Ustawiono kąty: Y=" << rotationY_N
+            << ", Y1=" << rotationY1_N
+            << ", Z=" << rotationZ_N << std::endl;
     }
     else {
         std::cout << "Nieprawidłowy format danych!" << std::endl;
@@ -323,6 +304,8 @@ void Aplication::updatePositioning() {
 
     positioningMode = false;
 }
+
+// DEFINICJA OBSLUGI WEJSCIA
 
 bool Aplication::processInput() {
     bool output = false;
@@ -347,6 +330,9 @@ bool Aplication::processInput() {
         cameraPos.z += cameraSpeed;
         cameraPos.x -= cameraSpeed;
     }
+
+	// sterowanie kamerą góra, dół
+
     if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
         cameraPos.y -= cameraSpeed;
     }
@@ -355,6 +341,8 @@ bool Aplication::processInput() {
     }
 
     bool static pKeyPressed = false;
+
+	// dodawanie prymitywów
 
     if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS && !pKeyPressed) {
         prymitywy.push_back(make_unique<Primitive>("..//Robot_SCARA//assets//prymityw.obj", glm::vec3(4.0f, 0.0f, 3.0f)));
@@ -366,6 +354,8 @@ bool Aplication::processInput() {
     }
 
     bool static oKeyPressed = false;
+
+	// usuwanie prymitywów
 
     if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS && !oKeyPressed) {
         if (!prymitywy.empty() && !pri.empty()) {
@@ -379,7 +369,7 @@ bool Aplication::processInput() {
         oKeyPressed = false;
     }
 
-    // reset na prawy przycisk
+	// resetowanie kamery
 
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
         cameraPos = glm::vec3(15.0f, 15.0f, 18.0f);
@@ -388,11 +378,16 @@ bool Aplication::processInput() {
         cameraSpeed = 0.005f;
     }
 
+	// zamykanie okna
+
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);
     }
 
     static bool mKeyPressed = false;
+
+	// przełączanie trybu sterowania
+
     if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS && !mKeyPressed) {
         controlMode = !controlMode;
         mKeyPressed = true;
@@ -425,6 +420,8 @@ bool Aplication::processInput() {
             mode2 = false;
             mode3 = true;
         }
+
+		// sterowanie obrotem robota
 
         if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
             if (mode1) {
@@ -460,6 +457,8 @@ bool Aplication::processInput() {
         }
     }
 
+	// włączenie trybu nagrywania
+
     if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS && !lKeyPressed) {
         if (playbackMode == PlaybackMode::NORMAL) {
             playbackMode = PlaybackMode::RECORDING;
@@ -476,6 +475,8 @@ bool Aplication::processInput() {
         lKeyPressed = false;
     }
 
+	// włączenie trybu odtwarzania
+
     if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS && !kKeyPressed) {
         if (!movementSequence.empty()) {
             if (playbackMode == PlaybackMode::NORMAL) {
@@ -484,10 +485,6 @@ bool Aplication::processInput() {
                 playbackTimer = 0.0f;
                 prim = false;
                 first = false;
-
-                // modelMat51 = glm::mat4(1.0f);
-                // modelMat51 = glm::translate(modelMat51, glm::vec3(4.0f, 0.0f, 3.0f));
-
                 std::cout << "Rozpoczęto odtwarzanie sekwencji. Liczba klatek: " << movementSequence.size() << std::endl;
             }
             else if (playbackMode == PlaybackMode::PLAYBACK) {
@@ -504,13 +501,14 @@ bool Aplication::processInput() {
         kKeyPressed = false;
     }
 
-    // włączenie trybu pozycjonowania:
+    // włączenie trybu pozycjonowania
+
     static bool nKeyPressed = false;
     if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS && !nKeyPressed) {
         setPositioningMode(!positioningMode);
         if (positioningMode) {
-            // Wymuszenie odczytu z konsoli
-            glfwPollEvents(); // Opróżnij bufor zdarzeń
+            // wymuszenie odczytu z konsoli
+            glfwPollEvents(); // opróżnienie buforu zdarzeń
             updatePositioning();
         }
         nKeyPressed = true;
@@ -529,6 +527,7 @@ void Aplication::run() {
         float currentFrame = glfwGetTime();
         float deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
+        float mnoznik;
 
         if (processInput()) continue;
 
@@ -539,13 +538,9 @@ void Aplication::run() {
             updatePositioning();
         }
 
-       // if (isAnimating) {
-       //     updateAnimation(deltaTime);
-      //  }
-
         glfwPollEvents();
 
-        // kolor t³a
+        // kolor tla
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -562,11 +557,10 @@ void Aplication::run() {
         shader1->use();
 
         glm::mat4 gridModel = glm::mat4(1.0f);
-        gridModel = glm::translate(gridModel, glm::vec3(0.0f, -0.01f, 0.0f));  // Lekko poniżej 0, aby uniknąć "z-fighting"
-        // gridModel = glm::scale(gridModel, glm::vec3(0.5f));
+        gridModel = glm::translate(gridModel, glm::vec3(0.0f, -0.01f, 0.0f));  // lekko poniżej 0, aby uniknąć "z-fighting"
         shader->setMat4("mvp", projection * view * gridModel);
         shader->setMat4("model", gridModel);
-        shader->setVec3("lightColor", glm::vec3(0.2f, 0.2f, 0.2f));  // Szare światło dla siatki
+        shader->setVec3("lightColor", glm::vec3(0.2f, 0.2f, 0.2f));  // szare światło dla siatki
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         groundGrid->Draw();
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -578,10 +572,7 @@ void Aplication::run() {
         shader1->setVec3("lightColor", lightColor);
 
         // --- Rysowanie pierwszego modelu  ---
-        // glm::vec3 pivot = glm::vec3(-1.5f, 0.25f, 0.0f);
-
         glm::mat4 modelMat1 = glm::mat4(1.0f);
-        // modelMat1 = glm::scale(modelMat1, glm::vec3(0.1f));
         glm::mat4 mvp1 = projection * view * modelMat1;
         shader->use();
         shader->setMat4("mvp", mvp1);
@@ -591,10 +582,21 @@ void Aplication::run() {
         // --- Rysowanie drugiego modelu  ---
         glm::mat4 modelMat2 = glm::mat4(1.0f);
         glm::vec3 pivot1 = glm::vec3(0.0f, 0.25f, 1.8f);
-        modelMat2 = glm::translate(modelMat2, pivot1);                                    // przesunięcie do punktu obrotu
-        modelMat2 = glm::rotate(modelMat2, glm::radians(rotationY), glm::vec3(0, 1, 0));  // obrót wokół osi Y
-        modelMat2 = glm::translate(modelMat2, -pivot1);                                   // przesunięcie w górę
-        modelMat2 = glm::translate(modelMat2, glm::vec3(0.0f, 1.79f, 1.8f));              // przesuniecie do koncowki ramienia
+        modelMat2 = glm::translate(modelMat2, pivot1);                                              // przesunięcie do punktu obrotu
+        if (Y_N) {
+            float diff = rotationY_N - rotationY;
+            float step = glm::clamp(diff, -0.03f, 0.03f);
+            if (abs(diff) > 0.0001f) {
+                rotationY += step;
+            }
+            else {
+                rotationY = rotationY_N;
+                Y_N = false;
+            }
+        }
+        modelMat2 = glm::rotate(modelMat2, glm::radians(rotationY), glm::vec3(0, 1, 0));
+        modelMat2 = glm::translate(modelMat2, -pivot1);                                             // przesunięcie w górę
+        modelMat2 = glm::translate(modelMat2, glm::vec3(0.0f, 1.79f, 1.8f));                        // przesuniecie do koncowki ramienia
         glm::mat4 mvp2 = projection * view * modelMat1 * modelMat2;
 
         if (mode1) {
@@ -614,10 +616,25 @@ void Aplication::run() {
         // --- Rysowanie trzeciego modelu  ---
         glm::mat4 modelMat3 = glm::mat4(1.0f);
         glm::vec3 pivot2 = glm::vec3(0.0f, 0.25f, 2.6f);
-        modelMat3 = glm::translate(modelMat3, pivot2);                                     // przesunięcie do punktu obrotu
-        modelMat3 = glm::rotate(modelMat3, glm::radians(rotationY1), glm::vec3(0, 1, 0));  // obrót wokół osi Y
-        modelMat3 = glm::translate(modelMat3, -pivot2);                                    // przesunięcie w górę
-        modelMat3 = glm::translate(modelMat3, glm::vec3(0.0f, 0.5f, 6.7f));                // przesuniecie do koncowki ramienia
+        modelMat3 = glm::translate(modelMat3, pivot2);                                                  // przesunięcie do punktu obrotu
+
+     
+        if (Y1_N) {
+            float diff = rotationY1_N - rotationY1;
+            float step = glm::clamp(diff, -0.03f, 0.03f);
+            if (abs(diff) > 0.0001f) {
+                rotationY1 += step;
+            }
+            else {
+                rotationY1 = rotationY1_N;
+                Y1_N = false;
+            }
+        }
+        modelMat3 = glm::rotate(modelMat3, glm::radians(rotationY1), glm::vec3(0, 1, 0));
+
+
+        modelMat3 = glm::translate(modelMat3, -pivot2);                                                // przesunięcie w górę
+        modelMat3 = glm::translate(modelMat3, glm::vec3(0.0f, 0.5f, 6.7f));                            // przesuniecie do koncowki ramienia
         glm::mat4 mvp3 = projection * view * modelMat1 * modelMat2 * modelMat3;
         if (mode2) {
             shader1->use();
@@ -633,16 +650,21 @@ void Aplication::run() {
 
         // --- Rysowanie czwartego modelu  ---
         glm::mat4 modelMat4 = glm::mat4(1.0f);
-        if (!pri.empty()) {
-            if (!pri[0])
-                modelMat4 = glm::translate(modelMat4, glm::vec3(0.0f, rotationZ, 0.0f));
-            else
-                modelMat4 = glm::translate(modelMat4, glm::vec3(0.0f, -0.1f + rotationZ, 0.0f));
-        }
-        else
-            modelMat4 = glm::translate(modelMat4, glm::vec3(0.0f, rotationZ, 0.0f));
 
-        // modelMat4 = glm::scale(modelMat4, glm::vec3(0.7f));
+
+        if (Z_N) {
+            float diff = rotationZ_N - rotationZ;
+            float step = glm::clamp(diff, -0.01f, 0.01f);
+            if (abs(diff) > 0.0001f) {
+                rotationZ += step;
+            }
+            else {
+                rotationZ = rotationZ_N;
+                Z_N = false;
+            }
+        }
+        modelMat4 = glm::translate(modelMat4, glm::vec3(0.0f, rotationZ, 0.0f));
+
         glm::mat4 mvp4 = projection * view * modelMat1 * modelMat2 * modelMat3 * modelMat4;
 
         if (mode3) {
@@ -661,7 +683,7 @@ void Aplication::run() {
         glm::vec3 minWorld = glm::vec3(arm3modelMatrix * glm::vec4(globalMin1, 1.0f));
         glm::vec3 maxWorld = glm::vec3(arm3modelMatrix * glm::vec4(globalMax2, 1.0f));
 
-        // --- Rysowanie prymitywa ---
+        // --- Rysowanie prymitywow ---
         if (!prymitywy.empty()) {
             for (int i = 0; i < prymitywy.size(); ++i) {
                 glm::mat4 modelMat5 = glm::mat4(1.0f);
