@@ -13,11 +13,17 @@
  * prawy przycisk myszy - reset kamery
  * scroll - zoom kamery
  * ESC - zamknięcie okna
+ * 
  * OBSŁUGA TRYBU UCZENIA
  * KLIKNAC M NASTEPNIE L WYKONAC JAKIES RUCHY PRZY POMOCY 1 2 3 I STRZALEK
  * ZNOWU KLIKNAC L ZEBY ZAKONCZYC NAGRYWANIE, NACISNAC K ZEBY URUCHOMIC ODTWARZANIE
+ * 
  * OBSLUGA TRYBU POZYCJONOWANIA
  * KLIKNAC N, WPISAC WSPOLRZEDNE W KONSOLI I ZAAKCEPTOWAC KLIKAJAC ENTER
+ * 
+ * OBSLUGA TRYBU DODAWANIA I USUWANIA PRYMITYWU
+ * KLIKNAC P A NASTEPNIE WPISAC W KONSOLI WSPOLRZEDNE PRYMITYWU
+ * ABY USUNAC PRYMITYW KLIKNAC 0
  */
 
 using namespace std;
@@ -345,7 +351,16 @@ bool Aplication::processInput() {
 	// dodawanie prymitywów
 
     if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS && !pKeyPressed) {
-        prymitywy.push_back(make_unique<Primitive>("..//Robot_SCARA//assets//prymityw.obj", glm::vec3(4.0f, 0.0f, 3.0f)));
+        float a, b, c;
+        float distance;
+        do {
+            cout << "Podaj pozycje prymitywa (x y z): ";
+            cin >> a >> b >> c;
+            cout << "\n";
+            distance = glm::length(glm::vec2(a, c));
+        } while (distance < 1.0f || distance > 9.0f || b < 0.0f || b > 3.0f);
+
+        prymitywy.push_back(make_unique<Primitive>("..//Robot_SCARA//assets//prymityw.obj", glm::vec3(a, b, c)));
         pri.push_back(false);
         pKeyPressed = true;
     }
