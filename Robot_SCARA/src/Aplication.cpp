@@ -211,8 +211,8 @@ void Aplication::updatePlayback(float deltaTime) {
 // DEFINICJA KINEMATYKI ODWRÓCONEJ
 
 void Aplication::calculateInverseKinematics(const glm::vec3& target, float& outY, float& outY1, float& outZ) {
-    const float L1 = 4.9f;  // Długość pierwszego ramienia
-    const float L2 = 4.1f;  // Długość drugiego ramienia
+    const float L1 = 4.16f;  // Długość pierwszego ramienia
+    const float L2 = 4.9f;  // Długość drugiego ramienia
     const float Z_MIN = -1.9f;
     const float Z_MAX = -0.2f;
 
@@ -239,7 +239,7 @@ void Aplication::calculateInverseKinematics(const glm::vec3& target, float& outY
 
     // Konwersja na stopnie i ustawienie ograniczeń
     outY = glm::degrees(theta1);
-    outY1 = glm::degrees(theta2) - 90.0f;  // Korekta dla układu robota
+    outY1 = glm::degrees(theta2) ;  // Korekta dla układu robota
 
     // Normalizacja wysokości
     float z_norm = (z - 1.79f) / 2.0f;  // 1.79 to wysokość bazowa
@@ -249,6 +249,10 @@ void Aplication::calculateInverseKinematics(const glm::vec3& target, float& outY
     outY = glm::clamp(outY, -130.0f, 130.0f);
     outY1 = glm::clamp(outY1, -130.0f, 130.0f);
     outZ = glm::clamp(outZ, Z_MIN, Z_MAX);
+
+    float actualX = L1 * cos(glm::radians(outY)) + L2 * cos(glm::radians(outY + outY1));
+    float actualY = L1 * sin(glm::radians(outY)) + L2 * sin(glm::radians(outY + outY1));
+    cout << "Przewidywana pozycja końcówki: (" << actualX << ", " << actualY << endl;
 }
 
 void Aplication::setPositioningMode(bool enable) {
@@ -265,7 +269,7 @@ void Aplication::updatePositioning() {
     if (!positioningMode) return;
 
     if (Y_N || Y1_N || Z_N) {
-        std::cout << "Poczekaj aż robot zakończy poprzedni ruch!" << std::endl;
+        cout << "Poczekaj aż robot zakończy poprzedni ruch!" << endl;
         positioningMode = false;
         return;
     }
@@ -274,10 +278,10 @@ void Aplication::updatePositioning() {
 
     cout << "Wprowadz wspolrzedne (x y z), oddzielone spacjami: ";
     string input;
-    getline(std::cin, input);
+    getline(cin, input);
 
 
-    std::istringstream iss(input);
+    istringstream iss(input);
     float x, y, z;
     if (iss >> x >> y >> z) {
         inputCoords = glm::vec3(x, y, z);
@@ -285,7 +289,7 @@ void Aplication::updatePositioning() {
         // Sprawdzanie czy punkt jest w zasięgu robota
         float distance = glm::length(glm::vec2(x, z));
         if (distance > 9.0f || distance < 1.0f || y < 0.0f || y > 3.0f) {
-            std::cout << "Punkt poza zakresem robota!" << std::endl;
+            cout << "Punkt poza zakresem robota!" << endl;
             positioningMode = false;
             return;
         }
@@ -300,12 +304,12 @@ void Aplication::updatePositioning() {
 		Y1_N = true;
 		Z_N = true;
 
-        std::cout << "Ustawiono kąty: Y=" << rotationY_N
+        cout << "Ustawiono kąty: Y=" << rotationY_N
             << ", Y1=" << rotationY1_N
             << ", Z=" << rotationZ_N << std::endl;
     }
     else {
-        std::cout << "Nieprawidłowy format danych!" << std::endl;
+        cout << "Nieprawidłowy format danych!" << std::endl;
     }
 
     positioningMode = false;
@@ -356,11 +360,11 @@ bool Aplication::processInput() {
         do {
             cout << "Podaj pozycje prymitywa (x y z): ";
             cin >> a >> b >> c;
-            cout << "\n";
-            distance = glm::length(glm::vec2(a, c));
+            cout << endl;
+            distance = glm::length(glm::vec2(c, a));
         } while (distance < 1.0f || distance > 9.0f || b < 0.0f || b > 3.0f);
 
-        prymitywy.push_back(make_unique<Primitive>("..//Robot_SCARA//assets//prymityw.obj", glm::vec3(a, b, c)));
+        prymitywy.push_back(make_unique<Primitive>("..//Robot_SCARA//assets//prymityw.obj", glm::vec3(c, b, a)));
         pri.push_back(false);
         pKeyPressed = true;
     }
