@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include <string>
 #include <memory>
 #include <vector>
@@ -13,7 +12,6 @@
 #include "Primitive.h"
 
 using namespace std;
-
 
 //tryb uczenia
 enum class PlaybackMode {
@@ -28,7 +26,7 @@ class Aplication {
 public:
 	Aplication(int width = 800, int height = 600, const string& title = "SYMULACJA SCARA");
 	~Aplication(); // dekonstruktor
-	void run(); // g³ówna pêtla aplikacji 
+	void run(); // glówna pêtla aplikacji 
 
 
 private:
@@ -58,12 +56,14 @@ private:
 
 
 
-	float rotationY = 0.0f;
-	float rotationY1 = 0.0f;
-	float rotationZ = 0.0f;
+	float rotationY = 0.0f, rotationY_N = 0.0f;
+	float rotationY1 = 0.0f, rotationY1_N = 0.0f;
+	float rotationZ = 0.0f, rotationZ_N = 0.0f;
+	bool Y_N=false, Y1_N=false, Z_N=false;
+
 
 	glm::vec3 lightDir = glm::normalize(glm::vec3(-1.0f, -1.0f, -0.5f)); // kierunek padania światła
-	glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 0.95f); // kolor światła (lekko żółty)
+	glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 0.95f); // kolor światła
 
 	// ZMIENNE TRYBU UCZENIA
 	PlaybackMode playbackMode = PlaybackMode::NORMAL;
@@ -81,33 +81,19 @@ private:
 	glm::vec3 targetPosition = glm::vec3(0.0f);
 	glm::vec3 inputCoords = glm::vec3(0.0f);
 	glm::vec3 targetAngles = glm::vec3(0.0f);
-	//bool isAnimating = false;
-	//float animationSpeed = 1.0f;
-
-
 
 	bool isMovingToTarget = false;
-	//float movementProgress = 0.0f;
-	//const float movementSpeed = 1.5f;
-
-
 
 
 	void initGLFW();
 	void CreateWindow(int width, int height, const string& title);
 	bool processInput();
 	void updatePlayback(float deltaTime);
-	//Tryb pzycjonowania:
-	void calculateInverseKinematics(const glm::vec3& target,float& outY, float& outY1,float& outZ);
+	//Tryb pozycjonowania:
+	void calculateInverseKinematics(const glm::vec3& target, float& outY, float& outY1, float& outZ);
 	void setPositioningMode(bool enable);
 	void updatePositioning();
-	//void updateAnimation(float deltaTime);
-	//float moveTowards(float current, float target, float maxDelta);
-
-
 	static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 	static void mouse_callback(GLFWwindow* window, double xpos, double ypos);
-
-
 
 };
