@@ -226,7 +226,7 @@ void Aplication::calculateInverseKinematics(const glm::vec3& target, float& outY
 
     // Sprawdzanie czy punkt jest osiągalny
     if (D > L1 + L2 || D < fabs(L1 - L2)) {
-        std::cout << "Punkt poza zasięgiem robota!" << std::endl;
+       cout << "Punkt poza zasięgiem robota!" << endl;
         return;
     }
 
@@ -306,10 +306,10 @@ void Aplication::updatePositioning() {
 
         cout << "Ustawiono kąty: Y=" << rotationY_N
             << ", Y1=" << rotationY1_N
-            << ", Z=" << rotationZ_N << std::endl;
+            << ", Z=" << rotationZ_N << endl;
     }
     else {
-        cout << "Nieprawidłowy format danych!" << std::endl;
+        cout << "Nieprawidłowy format danych!" << endl;
     }
 
     positioningMode = false;
@@ -504,16 +504,16 @@ bool Aplication::processInput() {
                 playbackTimer = 0.0f;
                 prim = false;
                 first = false;
-                std::cout << "Rozpoczęto odtwarzanie sekwencji. Liczba klatek: " << movementSequence.size() << std::endl;
+               cout << "Rozpoczęto odtwarzanie sekwencji. Liczba klatek: " << movementSequence.size() << std::endl;
             }
             else if (playbackMode == PlaybackMode::PLAYBACK) {
                 playbackMode = PlaybackMode::NORMAL;
-                std::cout << "Zatrzymano odtwarzanie" << std::endl;
+                cout << "Zatrzymano odtwarzanie" << endl;
             }
             kKeyPressed = true;
         }
         else {
-            std::cout << "Brak sekwencji do odtworzenia!" << std::endl;
+            cout << "Brak sekwencji do odtworzenia!" << endl;
         }
     }
     else if (glfwGetKey(window, GLFW_KEY_K) == GLFW_RELEASE) {
